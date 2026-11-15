@@ -1,0 +1,28 @@
+# Hourly check of publications that are due. TEST MODE ONLY until phase 4:
+# safety checks run and the item is marked "simulated" — Meta is never called.
+name: Publications du jour (mode TEST)
+on:
+  schedule:
+    - cron: "7 9-19 * * 1-5"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: comptoir-state, cancel-in-progress: false }
+jobs:
+  due:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - env:
+          PYTHONPATH: src
+          PUBLISH_MODE: test
+        run: python -m comptoir.run due --mode test
+      - run: |
+          git config user.name "comptoir-bot"
+          git config user.email "comptoir-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Suivi publications $(date -u +%F)"
+          git push

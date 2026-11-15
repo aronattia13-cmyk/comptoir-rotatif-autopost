@@ -1,0 +1,22 @@
+{
+  "_doc": "Per-article editorial settings. short_title must stay faithful to the real title. use_article_image=false when the article image is an illustration with embedded text; a real product photo of photo_category is used instead.",
+  "turbines-dentaires-led-equipez-votre-cabinet-a-la-bonne-echelle": {
+    "short_title": "Turbines LED : équipez votre cabinet à la bonne échelle",
+    "use_article_image": true,
+    "photo_category": "turbine",
+    "enabled": true
+  },
+  "organisation-rationnelle-et-choix-malins-pour-survivre-aux-nouvelles-contraintes-reglementaires-dans-les-cabinets-dentaires": {
+    "short_title": "Organisation rationnelle face aux contraintes réglementaires",
+    "use_article_image": false,
+    "photo_category": "contre-angle",
+    "enabled": true
+  },
+  "cabinets-dentaires-fermes-pour-non-conformite-le-manque-de-rotatifs-peut-vous-couter-tres-cher": {
+    "short_title": "Le manque de rotatifs peut vous coûter très cher",
+    "use_article_image": false,
+    "photo_category": "contre-angle",
+    "enabled": false,
+    "note": "Disabled pending David's review: the article presents '20 rotatifs minimum par dentiste' and closure/radiation figures as ARS practice without a cited source."
+  }
+}

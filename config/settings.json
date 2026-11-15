@@ -1,0 +1,68 @@
+{
+  "timezone": "Europe/Paris",
+  "mode": "test",
+  "weekly_slots": [
+    {
+      "weekday": 0,
+      "slot": "mon-product",
+      "family": "product",
+      "surface": "post",
+      "time": "12:30",
+      "facebook": true
+    },
+    {
+      "weekday": 1,
+      "slot": "tue-service-story",
+      "family": "service",
+      "surface": "story",
+      "time": "18:30",
+      "facebook": true
+    },
+    {
+      "weekday": 2,
+      "slot": "wed-blog",
+      "family": "blog",
+      "surface": "post",
+      "time": "12:30",
+      "facebook": true
+    },
+    {
+      "weekday": 3,
+      "slot": "thu-product-story",
+      "family": "product",
+      "surface": "story",
+      "time": "18:30",
+      "facebook": false
+    },
+    {
+      "weekday": 4,
+      "slot": "fri-product-range",
+      "family": "product",
+      "surface": "post",
+      "time": "12:30",
+      "facebook": true
+    }
+  ],
+  "cooldown_days": {
+    "same_product": 42,
+    "same_model": 21,
+    "same_article": 90,
+    "same_service_message": 28,
+    "same_service_photo": 21
+  },
+  "avoid_last_layouts": 2,
+  "post_format": "portrait",
+  "design": "A",
+  "product_variants": {
+    "a-blanc": 0.7,
+    "a-brume": 0.2,
+    "a-blanc-serif": 0.1
+  },
+  "_product_variants_doc": "Direction A variants and their target share of product visuals (validated 2026-11-15: 70/20/10).",
+  "meta": {
+    "graph_version": "v25.0",
+    "container_poll_seconds": 5,
+    "container_timeout_seconds": 180,
+    "max_publish_retries": 2
+  }
+}

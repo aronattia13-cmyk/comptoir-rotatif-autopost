@@ -1,0 +1,34 @@
+{
+  "gravure": {
+    "enabled": true,
+    "label": "Gravure personnalisée",
+    "whatsapp_topic": "gravure",
+    "photo_folder": "assets/services/gravure",
+    "fallback_photo_categories": [
+      "contre-angle",
+      "turbine"
+    ],
+    "messages": [
+      {
+        "id": "gravure-identifier",
+        "title": "Gravure personnalisée de vos instruments",
+        "body": "Identifiez en un coup d'œil les instruments attribués à chaque collaborateur du cabinet."
+      },
+      {
+        "id": "gravure-un-instrument",
+        "title": "Un instrument, un collaborateur",
+        "body": "La gravure personnalisée permet de savoir à qui revient chaque instrument rotatif."
+      },
+      {
+        "id": "gravure-equipe",
+        "title": "Vos instruments, identifiés",
+        "body": "Praticiens et assistants retrouvent facilement leurs propres instruments."
+      },
+      {
+        "id": "gravure-cabinet",
+        "title": "Gravure personnalisée pour votre cabinet",
+        "body": "Attribuez chaque instrument à un membre de l'équipe, sans confusion."
+      }
+    ]
+  }
+}

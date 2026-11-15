@@ -1,0 +1,44 @@
+# Every Sunday: refresh Shopify catalogue + blog, plan the coming week,
+# render the images, update dashboard + bio page, deploy GitHub Pages.
+# Nothing is published to Meta here.
+name: Planification hebdomadaire
+on:
+  schedule:
+    - cron: "17 16 * * 0"        # Sunday ~17:17/18:17 Paris
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency: { group: comptoir-state, cancel-in-progress: false }
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get install -y --no-install-recommends libfribidi0   # kerning (raqm)
+      - run: pip install -r requirements.txt
+      - run: python -m pytest -q
+      - name: Plan + render
+        env:
+          PYTHONPATH: src
+          WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }}
+          SHOPIFY_STOREFRONT_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_TOKEN }}
+        run: python -m comptoir.run weekly
+      - name: Commit history (also keeps scheduled workflows alive)
+        run: |
+          git config user.name "comptoir-bot"
+          git config user.email "comptoir-bot@users.noreply.github.com"
+          git add data site
+          git diff --cached --quiet || git commit -m "Planification $(date -u +%F)"
+          git push
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: { name: github-pages }
+    steps:
+      - uses: actions/deploy-pages@v4
