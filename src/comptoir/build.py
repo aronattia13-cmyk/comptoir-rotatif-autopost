@@ -65,15 +65,19 @@ def build_item(item: PlanItem, products: list[Product], articles: list[Article],
     else:
         # Real engraving photo only if provided; otherwise purely typographic.
         shot = design.prepare(_open(item.photo_url), False) if item.photo_source == "service" else None
-        img = (design.service_story(item.title, item.body, item.layout, shot) if story
-               else design.service_post(item.title, item.body, item.layout, shot))
-        msg = {"title": item.title, "body": item.body}
         wa = whatsapp.link_or_none(topic="gravure")
+        # Never announce WhatsApp when no number is configured.
+        story_cta = "Renseignements WhatsApp · lien en bio" if wa else "Renseignements · lien en bio"
+        post_cta = "Renseignements sur WhatsApp" if wa else "Renseignements · lien en bio"
+        img = (design.service_story(item.title, item.body, item.layout, shot, cta=story_cta) if story
+               else design.service_post(item.title, item.body, item.layout, shot, cta=post_cta))
+        msg = {"title": item.title, "body": item.body}
         ig = captions.service_caption(msg, "instagram", wa)
         fb = captions.service_caption(msg, "facebook", wa)
         item.payload["whatsapp_link"] = wa
         if item.facebook:                       # Facebook feed post: link clickable in caption
-            fb_img = design.service_post(item.title, item.body, item.layout, shot)
+            fb_img = design.service_post(item.title, item.body, item.layout, shot,
+                                         cta="Renseignements sur WhatsApp" if wa else "Nous contacter")
             fb_path = save_jpeg(fb_img, out_dir / f"{item.uid}-fb.jpg")
             item.payload["facebook_image"] = str(fb_path.relative_to(ROOT))
 

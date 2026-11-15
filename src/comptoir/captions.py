@@ -97,6 +97,6 @@ def service_caption(msg: dict, platform: str, wa_link: str | None) -> str:
         else:
             lines.append(f"Renseignements : {CONTACT_URL}")
     else:
-        lines.append(SERVICE_CTA_IG)
+        lines.append(SERVICE_CTA_IG if wa_link else "Renseignements : lien en bio ou message privé.")
         lines += ["", tags("service")]
     return "\n".join(lines)

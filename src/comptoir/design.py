@@ -394,7 +394,7 @@ def blog_story(title: str, shot: Shot | None) -> Image.Image:
 
 # ------------------------------------------------------------ engraving ----
 def service_post(title: str, body: str, variant: str = "a-gravure-blanc",
-                 shot: Shot | None = None, cta: str = "Renseignements sur WhatsApp") -> Image.Image:
+                 shot: Shot | None = None, cta: str = "Renseignements · lien en bio") -> Image.Image:
     """Typographic by default. A real photo (assets/services/gravure/) is used
     only when provided — never a simulated engraving."""
     W, H = POST
@@ -435,7 +435,7 @@ def service_post(title: str, body: str, variant: str = "a-gravure-blanc",
 
 
 def service_story(title: str, body: str, variant: str = "a-gravure-blanc",
-                  shot: Shot | None = None) -> Image.Image:
+                  shot: Shot | None = None, cta: str = "Renseignements · lien en bio") -> Image.Image:
     W, H = STORY
     bg = MIST if variant == "a-gravure-brume" else WHITE
     img = Image.new("RGB", (W, H), bg)
@@ -443,7 +443,7 @@ def service_story(title: str, body: str, variant: str = "a-gravure-blanc",
     lg = logo(196)
     img.paste(lg, (MS, STORY_TOP), lg)
     base = STORY_BOTTOM
-    label(d, (MS, base), "Renseignements WhatsApp · lien en bio", 22, fill=INK)
+    label(d, (MS, base), cta, 22, fill=INK)
     f_b = sans(400, 36)
     b_lines = wrap(body, f_b, W - 2 * MS - 80, 3)
     f_t, t_lines = fit_lines(title, serif, [124, 112, 104, 96], W - 2 * MS, 3)

@@ -63,6 +63,8 @@
     "graph_version": "v25.0",
     "container_poll_seconds": 5,
     "container_timeout_seconds": 180,
-    "max_publish_retries": 2
+    "max_publish_retries": 2,
+    "max_delay_minutes": 90,
+    "_max_delay_doc": "A slot more than 90 min late is never published (no catch-up of past slots); it is marked 'missed'."
   }
 }

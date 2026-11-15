@@ -97,18 +97,30 @@ def cmd_due(args):
     history = History.load()
     queue = load_queue()
     now = datetime.now(TZ)
+    max_delay = timedelta(minutes=_settings()["meta"].get("max_delay_minutes", 90))
+    activated = live_activated_at() if mode == "live" else None
+    problems = 0
     client = None
     secrets = [os.environ.get(k, "") for k in ("META_SYSTEM_USER_TOKEN", "META_APP_SECRET", "SHOPIFY_STOREFRONT_TOKEN")]
     for q in queue:
         it = planner.PlanItem(**{**q, "status": "planned" if q["status"] == "partial" else q["status"]})
         if q["status"] not in ("planned", "partial") or it.scheduled_at() > now or history.is_published(it.uid):
             continue
+        e = history.get(it.uid)
+        late = now - it.scheduled_at()
+        if mode == "live" and (late > max_delay or (activated and it.scheduled_at() < activated)):
+            # No catch-up: a past slot is never published late.
+            q["status"], q["reason"] = "missed", f"créneau passé ({int(late.total_seconds() // 60)} min) : non rattrapé"
+            if e and e.status != "partial":
+                e.status, e.error = "missed", q["reason"]
+            log("créneau non rattrapé", uid=it.uid, retard_min=int(late.total_seconds() // 60))
+            continue
         errors = checks.check_item(it, products)
         text = (it.payload.get("caption_instagram", "") + it.payload.get("caption_facebook", ""))
         if checks.scan_for_secrets(text, secrets):
             errors.append("secret détecté dans une légende")
-        e = history.get(it.uid)
         if errors:
+            problems += 1
             q["status"] = "blocked"
             q["reason"] = "; ".join(errors)
             if e:
@@ -125,8 +137,25 @@ def cmd_due(args):
         else:
             client = client or _client()
             _publish_one(q, e, client=client)
+            if q["status"] in ("failed", "uncertain", "partial"):
+                problems += 1
     history.save()
     save_queue(queue)
+    if problems:
+        # Non-zero exit = GitHub marks the run red and e-mails the owner.
+        # Nothing is retried automatically (no duplicate risk).
+        sys.exit(f"{problems} publication(s) bloquée(s) ou en échec : voir data/log.jsonl et le tableau de contrôle")
+
+
+def live_activated_at():
+    """Activation time written in config/LIVE_ENABLED (slots before it are never published)."""
+    try:
+        for line in LIVE_FLAG.read_text().splitlines():
+            if line.startswith("activated_at:"):
+                return datetime.fromisoformat(line.split(":", 1)[1].strip())
+    except (OSError, ValueError):
+        pass
+    return None
 
 
 def _settings() -> dict:
@@ -190,6 +219,40 @@ def _publish_one(q: dict, e, client, only: str | None = None) -> None:
         if e:
             e.status = "partial"
         log("publication partielle", uid=q["uid"], results=res)
+
+
+def cmd_rebuild(args):
+    """Re-render planned, not-yet-published future items with current Shopify
+    data and current settings (e.g. WhatsApp configured or not). Never touches
+    an item already published on any network."""
+    products = catalog.load_catalog()
+    articles = blog.from_dicts(json.loads((ROOT / "data" / "articles.json").read_text()))
+    history = History.load()
+    queue = load_queue()
+    today = date.today().isoformat()
+    for q in queue:
+        e = history.get(q["uid"])
+        if q["status"] != "planned" or q["date"] < today or (e and e.platforms):
+            continue
+        it = planner.PlanItem(**q)
+        if it.family == "product":
+            p = next((x for x in products if x.handle == it.reference), None)
+            if not p or not p.available:
+                q["status"], q["reason"] = "skipped", "produit indisponible au moment de la reconstruction"
+                if e:
+                    e.status, e.error = "skipped", q["reason"]
+                log("créneau annulé", uid=it.uid, reason=q["reason"])
+                continue
+            it.price, it.lot_size, it.title = str(p.price), p.lot_size, p.display_name
+        build.build_item(it, products, articles)
+        q.update(it.to_dict())
+        if e:
+            e.price = it.price
+        log("reconstruit", uid=it.uid, title=it.title)
+    history.save()
+    save_queue(queue)
+    write_dashboard(products, articles, history, queue)
+    write_bio_page(articles, products, queue)
 
 
 def cmd_meta_check(args):
@@ -347,6 +410,7 @@ def main(argv=None):
     w.add_argument("--days", type=int, default=7)
     d = sub.add_parser("due")
     d.add_argument("--mode", choices=["test", "live", "auto"], default=os.environ.get("PUBLISH_MODE", "test"))
+    sub.add_parser("rebuild")
     c = sub.add_parser("meta-check")
     c.add_argument("--container-test", action="store_true")
     t = sub.add_parser("publish-test")
@@ -355,7 +419,7 @@ def main(argv=None):
     t.add_argument("--surface", choices=["", "post", "story"], default="")
     t.add_argument("--platform", choices=["", "both", "instagram", "facebook"], default="both")
     args = ap.parse_args(argv)
-    {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check,
+    {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check, "rebuild": cmd_rebuild,
      "publish-test": cmd_publish_test}[args.cmd](args)
 
 

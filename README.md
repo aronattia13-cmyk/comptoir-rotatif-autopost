@@ -10,7 +10,8 @@ Automated Instagram & Facebook publishing for **Le Comptoir du Rotatif**, built 
 | 1 | Catalogue retrieval + 6 layouts × 3 formats | done |
 | 2 | Autonomous community manager: products / blog / services, rotation, history, checks | done |
 | 2b | Art direction overhaul — Direction A « Clinique » (variants 70/20/10) | done |
-| 3 | Meta connection: publishing modules, diagnostics, manual test publication | **in progress** — code done, Meta setup pending |
+| 3 | Meta connection: publishing modules, diagnostics, manual test publication | done (IG test post published 2026-11-16) |
+| 4 | Production: automatic publishing (IG posts, IG stories, FB posts) | ready — switched on by David creating `config/LIVE_ENABLED` |
 | 3 | Meta connection, dry-run publishing | to do |
 | 4 | Live automatic publishing | only after explicit approval |
 
@@ -48,7 +49,7 @@ Preview locally: `python scripts/phase2_preview.py --start 2026-11-16` → `site
 src/comptoir/catalog.py   Shopify fetch (products.json, optional Storefront API) + normalisation
 src/comptoir/design.py    Graphic system (Direction A)
 src/comptoir/media.py     Image/logo download with cache
-tests/                    pytest suite (112 tests, Meta fully mocked) + catalogue snapshot
+tests/                    pytest suite (124 tests, Meta fully mocked) + catalogue snapshot
 assets/fonts/da           Inter Tight, Instrument Serif (SIL OFL)  ·  assets/logo.png  site logo
 site/                     Folder to be served by GitHub Pages (public images for Meta)
 ```
@@ -90,6 +91,15 @@ Permissions (System User token, Facebook-Login family): `instagram_basic`, `inst
 | `publish-test.yml` | ONE real publication, only with the exact phrase `JE CONFIRME LA PUBLICATION DE TEST` |
 
 Publishing flow: public image check (200, JPEG, size) → IG container → status poll (FINISHED) → `media_publish` → permalink; Facebook: `/{page}/photos`. Per-platform idempotency; ambiguous timeouts are checked against recent media and otherwise marked `uncertain` (never retried blindly).
+
+## Production (phase 4)
+
+- Automatic publishing is ON only while `config/LIVE_ENABLED` exists. It is created by David himself on GitHub, with one line: `activated_at: <date-time +01:00>`.
+- **To stop everything immediately: delete `config/LIVE_ENABLED`** (open the file → trash icon → Commit). Alternative: Actions → « Publications du jour » → ⋯ → Disable workflow.
+- `due.yml` runs every 30 min on weekdays (UTC cron covering 12:30 and 18:30 Europe/Paris, summer and winter); slot times are computed in Europe/Paris.
+- No catch-up: a slot more than 90 min late, or scheduled before `activated_at`, is marked `missed` and never published.
+- Per-platform idempotency + history: nothing already published is sent twice. Failures turn the run red (GitHub e-mail) and are not retried automatically.
+- `python -m comptoir.run rebuild` re-renders future, unpublished items with current Shopify prices; `pages.yml` redeploys the visuals.
 
 ## Secrets (never in the repo or in chat)
 
