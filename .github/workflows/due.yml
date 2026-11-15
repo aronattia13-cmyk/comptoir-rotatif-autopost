@@ -1,9 +1,11 @@
-# Hourly check of publications that are due. TEST MODE ONLY until phase 4:
-# safety checks run and the item is marked "simulated" — Meta is never called.
-name: Publications du jour (mode TEST)
+# Publications that are due, every 30 minutes on weekdays.
+# Mode is decided by the repository itself:
+#   - config/LIVE_ENABLED absent  -> TEST: safety checks, items marked "simulated"
+#   - config/LIVE_ENABLED present -> real publication (created only after David's approval)
+name: Publications du jour
 on:
   schedule:
-    - cron: "7 9-19 * * 1-5"
+    - cron: "7,37 8-19 * * 1-5"     # UTC; covers 12:30 and 18:30 Europe/Paris, winter and summer
   workflow_dispatch:
 permissions:
   contents: write
@@ -18,11 +20,17 @@ jobs:
       - run: pip install -r requirements.txt
       - env:
           PYTHONPATH: src
-          PUBLISH_MODE: test
-        run: python -m comptoir.run due --mode test
-      - run: |
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_APP_ID: ${{ vars.META_APP_ID }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+        run: python -m comptoir.run due --mode auto
+      - if: always()
+        run: |
           git config user.name "comptoir-bot"
           git config user.email "comptoir-bot@users.noreply.github.com"
           git add data
-          git diff --cached --quiet || git commit -m "Suivi publications $(date -u +%F)"
-          git push
+          git diff --cached --quiet || git commit -m "Suivi publications $(date -u +%F-%H%M)"
+          git pull --rebase -q && git push

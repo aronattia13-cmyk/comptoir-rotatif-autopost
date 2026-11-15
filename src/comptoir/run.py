@@ -82,12 +82,15 @@ def cmd_weekly(args):
     history.save()
     save_queue(queue)
     write_dashboard(products, articles, history, queue)
-    write_bio_page(articles, products)
+    write_bio_page(articles, products, queue)
 
 
 def cmd_due(args):
     """Publications whose time has come. TEST mode: checks + simulated status."""
     mode = args.mode
+    if mode == "auto":
+        mode = "live" if LIVE_FLAG.exists() else "test"
+        log("mode", mode=mode)
     if mode == "live" and not LIVE_FLAG.exists():
         sys.exit("Publication réelle verrouillée : config/LIVE_ENABLED absent (validation phase 4 requise).")
     products = catalog.load_catalog(storefront_token=os.environ.get("SHOPIFY_STOREFRONT_TOKEN") or None)
@@ -113,6 +116,8 @@ def cmd_due(args):
             log("bloqué", uid=it.uid, errors=errors)
             continue
         if mode == "test":
+            if e and any(v.get("status") == "published" for v in e.platforms.values()):
+                continue                      # already partly published for real (test): leave as is
             q["status"] = "simulated"
             if e:
                 e.status = "simulated"
@@ -143,12 +148,18 @@ def _base_url() -> str:
     return url
 
 
-def _publish_one(q: dict, e, client) -> None:
-    """Real publication of one queue item, with per-platform idempotency."""
+def _publish_one(q: dict, e, client, only: str | None = None) -> None:
+    """Real publication of one queue item, with per-platform idempotency.
+    only='instagram' or 'facebook' restricts this run to one network (tests)."""
     from .meta import MetaError, redact
     from .publisher import MediaNotPublic, publish_item
     cfg = _settings()["meta"]
     done = {k for k, v in (e.platforms if e else {}).items() if v.get("status") == "published"}
+    if only:
+        done |= {"instagram", "facebook"} - {only}
+        if only in {k for k, v in (e.platforms if e else {}).items() if v.get("status") == "published"}:
+            log("déjà publié sur cette plateforme — rien à faire", uid=q["uid"], platform=only)
+            return
     try:
         res = publish_item(q, client, _base_url(), done,
                            poll=cfg["container_poll_seconds"], timeout=cfg["container_timeout_seconds"])
@@ -176,6 +187,8 @@ def _publish_one(q: dict, e, client) -> None:
         log("publié", uid=q["uid"], links={k: v.get("permalink") for k, v in res.items()})
     else:
         q["status"] = "partial"
+        if e:
+            e.status = "partial"
         log("publication partielle", uid=q["uid"], results=res)
 
 
@@ -221,9 +234,14 @@ def cmd_publish_test(args):
         sys.exit(f"Refus : phrase de confirmation attendue « {CONFIRM_PHRASE} ».")
     history = History.load()
     queue = load_queue()
-    cands = [q for q in queue if q["status"] == "planned" and (args.uid in ("", q["uid"]))]
+    allowed = ("planned", "partial", "simulated") if args.uid else ("planned", "partial")
+    cands = [q for q in queue if q["status"] in allowed and (args.uid in ("", q["uid"]))]
     if args.surface:
         cands = [q for q in cands if q["surface"] == args.surface]
+    only = None if args.platform in ("", "both") else args.platform
+    if only == "facebook":
+        cands = [q for q in cands if q.get("facebook") and
+                 (q["surface"] != "story" or q["payload"].get("facebook_image"))]
     if not cands:
         sys.exit("Aucun élément planifié correspondant dans la file.")
     q = cands[0]
@@ -232,8 +250,12 @@ def cmd_publish_test(args):
     if errors:
         sys.exit("Contrôles bloquants : " + "; ".join(errors))
     e = history.get(q["uid"])
-    log("PUBLICATION DE TEST demandée", uid=q["uid"], title=q["title"])
-    _publish_one(q, e, client=_client())
+    log("PUBLICATION DE TEST demandée", uid=q["uid"], title=q["title"], platform=only or "both")
+    if q["status"] == "simulated":
+        q["status"] = "planned"
+    _publish_one(q, e, client=_client(), only=only)
+    for k, v in (e.platforms if e else {}).items():
+        print(f"RÉSULTAT {k}: {v.get('status')} {v.get('permalink') or v.get('id') or v.get('error', '')}")
     history.save()
     save_queue(queue)
 
@@ -278,23 +300,39 @@ table{{border-collapse:collapse;width:100%;background:#fff}}td,th{{border-bottom
     (SITE / "index.html").write_text(page)
 
 
-def write_bio_page(articles, products):
-    """Link-in-bio page (real, clickable links): WhatsApp, articles, shop."""
+def write_bio_page(articles, products, queue=None):
+    """Link-in-bio page (real, clickable links): WhatsApp engraving, this
+    week's featured products and articles, shop, contact. Instagram captions
+    point here ("lien en bio")."""
     esc = html.escape
+    overrides = planner.load_json(planner.BLOG_OVERRIDES)
+    enabled = [a for a in blog.usable(articles) if overrides.get(a.handle, {}).get("enabled", True)]
     wa = whatsapp.link_or_none("gravure")
-    links = []
+    sections = []
     if wa:
-        links.append(("Gravure personnalisée — renseignements WhatsApp", wa))
-    links.append(("Boutique en ligne", "https://lecomptoirdurotatif.com"))
-    for a in sorted(blog.usable(articles), key=lambda a: a.published, reverse=True)[:5]:
-        links.append((a.title, a.url))
-    links.append(("Nous contacter", "https://lecomptoirdurotatif.com/pages/contact"))
-    items = "".join(f'<a class="l" href="{esc(u)}">{esc(t)}</a>' for t, u in links)
+        sections.append(("Gravure personnalisée", [("Renseignements sur WhatsApp", wa)]))
+    feat, seen = [], set()
+    today = date.today().isoformat()
+    for q in sorted(queue or [], key=lambda q: q["date"], reverse=True):
+        if q.get("status") in ("planned", "published", "partial", "simulated") and q.get("url") \
+                and q["date"] >= (date.today() - timedelta(days=14)).isoformat() and q["url"] not in seen:
+            if q["family"] == "product" and q["date"] <= today or q["family"] == "blog" and q["date"] <= today:
+                label = q["title"] if q["family"] == "blog" else f'{q["title"]} — lot de {q["lot_size"]}'
+                feat.append((label, q["url"]))
+                seen.add(q["url"])
+    if feat:
+        sections.append(("Publications récentes", feat[:6]))
+    sections.append(("Articles", [(a.title, a.url) for a in sorted(enabled, key=lambda a: a.published, reverse=True)[:5]]))
+    sections.append(("Le Comptoir du Rotatif", [("Boutique en ligne", "https://lecomptoirdurotatif.com"),
+                                                ("Nous contacter", "https://lecomptoirdurotatif.com/pages/contact")]))
+    body = "".join(f'<h2>{esc(t)}</h2>' + "".join(f'<a class="l" href="{esc(u)}">{esc(lbl)}</a>' for lbl, u in links)
+                   for t, links in sections if links)
     page = f'''<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Le Comptoir du Rotatif — liens</title><style>body{{margin:0;font:16px/1.4 system-ui,sans-serif;background:#f9f8f5;color:#141e2c}}
-main{{max-width:480px;margin:auto;padding:40px 20px;text-align:center}}img{{height:70px}}.l{{display:block;margin:12px 0;padding:14px 16px;border:1px solid #141e2c;
-border-radius:6px;color:#141e2c;text-decoration:none;background:#fff}}</style></head><body><main>
-<img src="../logo.png" alt="Le Comptoir du Rotatif"><p>Instruments rotatifs dentaires</p>{items}</main></body></html>'''
+<title>Le Comptoir du Rotatif — liens</title><style>body{{margin:0;font:16px/1.4 system-ui,sans-serif;background:#fff;color:#181b20}}
+main{{max-width:480px;margin:auto;padding:40px 20px 60px;text-align:center}}img{{height:64px;margin-bottom:8px}}
+h2{{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7a7e85;font-weight:600;margin:28px 0 8px}}
+.l{{display:block;margin:10px 0;padding:14px 16px;border:1px solid #181b20;border-radius:4px;color:#181b20;text-decoration:none}}</style></head>
+<body><main><img src="../logo.png" alt="Le Comptoir du Rotatif"><div>Instruments rotatifs dentaires</div>{body}</main></body></html>'''
     (SITE / "liens").mkdir(parents=True, exist_ok=True)
     (SITE / "liens" / "index.html").write_text(page)
     logo = ROOT / "assets" / "logo.png"
@@ -308,13 +346,14 @@ def main(argv=None):
     w = sub.add_parser("weekly")
     w.add_argument("--days", type=int, default=7)
     d = sub.add_parser("due")
-    d.add_argument("--mode", choices=["test", "live"], default=os.environ.get("PUBLISH_MODE", "test"))
+    d.add_argument("--mode", choices=["test", "live", "auto"], default=os.environ.get("PUBLISH_MODE", "test"))
     c = sub.add_parser("meta-check")
     c.add_argument("--container-test", action="store_true")
     t = sub.add_parser("publish-test")
     t.add_argument("--confirm", default="")
     t.add_argument("--uid", default="")
     t.add_argument("--surface", choices=["", "post", "story"], default="")
+    t.add_argument("--platform", choices=["", "both", "instagram", "facebook"], default="both")
     args = ap.parse_args(argv)
     {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check,
      "publish-test": cmd_publish_test}[args.cmd](args)

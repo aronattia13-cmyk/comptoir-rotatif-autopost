@@ -218,7 +218,7 @@ class Planner:
             wk = day.isocalendar()[1]
             cats = week_cats.setdefault(wk, [])
             if s["family"] == "product":
-                p = self.pick_product(day, cats, s["surface"], hard_other_range=s["slot"] == "fri-product-range")
+                p = self.pick_product(day, cats, s["surface"], hard_other_range=False)   # other range preferred
                 if not p:
                     item.status, item.reason = "skipped", "aucun produit non publié récemment"
                 else:
@@ -230,8 +230,20 @@ class Planner:
                                                       {v: 1 / len(PRODUCT_LAYOUTS) for v in PRODUCT_LAYOUTS})
             elif s["family"] == "blog":
                 a = self.pick_article(day)
-                if not a:
-                    item.status, item.reason = "skipped", "aucun nouvel article de blog disponible"
+                p = None if a else (self.pick_product(day, cats, s["surface"], hard_other_range=True)
+                                    or self.pick_product(day, cats, s["surface"], hard_other_range=False))
+                if not a and p:
+                    # No unused article: replace by a verified product from another range.
+                    cats.append(p.category)
+                    item.family = "product"
+                    item.reason = "remplacement : aucun nouvel article de blog disponible"
+                    item.subject, item.reference, item.category = model_key(p), p.handle, p.category
+                    item.price, item.lot_size, item.title, item.url = str(p.price), p.lot_size, p.display_name, p.url
+                    item.photo_url, item.photo_source = p.image_url, "product"
+                    item.layout = self._pick_weighted(day, self.s.get("product_variants") or
+                                                      {v: 1 / len(PRODUCT_LAYOUTS) for v in PRODUCT_LAYOUTS})
+                elif not a:
+                    item.status, item.reason = "skipped", "aucun nouvel article ni produit disponible"
                 else:
                     st = self.article_settings(a)
                     item.subject = item.reference = a.url

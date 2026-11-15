@@ -7,6 +7,11 @@ on:
       confirm:
         description: "Taper exactement : JE CONFIRME LA PUBLICATION DE TEST"
         required: true
+      platform:
+        description: "Réseau visé par ce test"
+        type: choice
+        options: [instagram, facebook]
+        default: instagram
       surface:
         description: "post ou story"
         type: choice
@@ -38,12 +43,13 @@ jobs:
           META_APP_ID: ${{ vars.META_APP_ID }}
           CONFIRM: ${{ inputs.confirm }}
           SURFACE: ${{ inputs.surface }}
+          PLATFORM: ${{ inputs.platform }}
           TARGET_UID: ${{ inputs.uid }}
-        run: python -m comptoir.run publish-test --confirm "$CONFIRM" --surface "$SURFACE" --uid "$TARGET_UID"
+        run: python -m comptoir.run publish-test --confirm "$CONFIRM" --surface "$SURFACE" --platform "$PLATFORM" --uid "$TARGET_UID"
       - if: always()
         run: |
           git config user.name "comptoir-bot"
           git config user.email "comptoir-bot@users.noreply.github.com"
           git add data
           git diff --cached --quiet || git commit -m "Publication de test $(date -u +%F)"
-          git push
+          git pull --rebase -q && git push

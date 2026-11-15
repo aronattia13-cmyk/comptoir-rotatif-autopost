@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 HISTORY_FILE = ROOT / "data" / "history.json"
 
-DONE = {"published", "simulated"}
+DONE = {"published", "simulated", "partial", "uncertain"}
 
 
 @dataclass

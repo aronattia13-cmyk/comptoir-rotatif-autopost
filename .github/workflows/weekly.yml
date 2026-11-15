@@ -33,7 +33,7 @@ jobs:
           git config user.email "comptoir-bot@users.noreply.github.com"
           git add data site
           git diff --cached --quiet || git commit -m "Planification $(date -u +%F)"
-          git push
+          git pull --rebase -q && git push
       - uses: actions/upload-pages-artifact@v3
         with: { path: site }
   deploy:
