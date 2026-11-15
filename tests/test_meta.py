@@ -228,8 +228,9 @@ def test_publish_test_requires_exact_phrase():
         run.main(["publish-test", "--confirm", "oui"])
 
 
-def test_live_mode_locked_without_flag():
+def test_live_mode_locked_without_flag(monkeypatch):
     from comptoir import run
-    assert not run.LIVE_FLAG.exists()
+    assert not run.LIVE_FLAG.exists()                 # isolated fake path (conftest)
+    monkeypatch.setattr(run, "_client", lambda: pytest.fail("Meta client must not be built"))
     with pytest.raises(SystemExit, match="verrouillée"):
         run.main(["due", "--mode", "live"])
