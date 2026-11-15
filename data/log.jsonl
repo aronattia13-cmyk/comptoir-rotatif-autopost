@@ -16,3 +16,5 @@
 {"ts": "2026-11-15T23:56:03+01:00", "event": "publication partielle", "uid": "2026-11-16-mon-product", "results": {"instagram": {"status": "published", "id": "M1", "container": "C1", "permalink": "https://instagram.com/p/x"}}}
 {"ts": "2026-11-15T23:56:03+01:00", "event": "publié", "uid": "2026-11-16-mon-product", "links": {"facebook": "https://facebook.com/p1"}}
 {"ts": "2026-11-15T23:56:03+01:00", "event": "déjà publié sur cette plateforme — rien à faire", "uid": "2026-11-16-mon-product", "platform": "instagram"}
+{"ts": "2026-11-16T00:01:01+01:00", "event": "PUBLICATION DE TEST demandée", "uid": "2026-11-16-mon-product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "platform": "instagram"}
+{"ts": "2026-11-16T00:01:10+01:00", "event": "publication partielle", "uid": "2026-11-16-mon-product", "results": {"instagram": {"status": "published", "id": "18499671046107102", "container": "17916145611550679", "permalink": "https://www.instagram.com/p/Dfx6Z9UETLL/"}}}
