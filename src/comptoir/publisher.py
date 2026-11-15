@@ -125,25 +125,91 @@ def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
 # --------------------------------------------------------------------------- #
 # Diagnostics — NO publication
 # --------------------------------------------------------------------------- #
+OK, CONFIG, META, CODE = "OK", "CONFIGURATION", "META", "CODE"
+
+
+def _category(exc: Exception) -> str:
+    from .meta import MetaConfigError
+    if isinstance(exc, (MetaConfigError, MediaNotPublic)):
+        return CONFIG
+    if isinstance(exc, MetaError):
+        return META
+    return CODE                                    # anything else = a bug in our code
+
+
 def diagnose(client: MetaClient, base_url: str | None, sample_image: str | None = None,
-             container_test: bool = False, get=None) -> list[tuple[str, bool, str]]:
-    """Each check -> (name, ok, detail). Never publishes anything.
+             container_test: bool = False, get=None) -> list[tuple[str, str, str]]:
+    """Each check -> (name, category, detail). category: OK | CONFIGURATION
+    (secrets, app or account settings) | META (API refused / unavailable) |
+    CODE (bug in this program). Never publishes anything.
     container_test=True creates an Instagram container that is NOT published
     (it expires by itself after 24 h) to prove Meta can fetch our image."""
-    out: list[tuple[str, bool, str]] = []
+    from . import meta as m
+    out: list[tuple[str, str, str]] = []
 
     def check(name, fn):
         try:
-            detail = fn()
-            out.append((name, True, detail or "OK"))
+            out.append((name, OK, fn() or "OK"))
             return True
         except Exception as exc:              # report, continue
-            out.append((name, False, str(exc)))
+            out.append((name, _category(exc), m.redact(f"{exc.__class__.__name__}: {exc}")
+                        if _category(exc) == CODE else m.redact(str(exc))))
             return False
 
-    check("Jeton système valide", lambda: f"identité {client.call('GET', 'me', fields='id,name').get('name', '?')}")
+    cfg = client.cfg
+
+    def _formats():
+        parts = (cfg.notes or []) + m.describe_secret_formats(cfg.token, cfg.app_secret)
+        if cfg.app_secret and not (len(cfg.app_secret) == 32 and all(c in "0123456789abcdef" for c in cfg.app_secret)):
+            raise m.MetaConfigError(" ; ".join(parts))
+        return " ; ".join(parts) or "aucun secret à normaliser"
+    check("Format des secrets (sans afficher les valeurs)", _formats)
+
+    def _kat():
+        if not m.self_test_signature():
+            raise RuntimeError("le calcul HMAC-SHA256 ne donne pas le résultat de référence")
+        return "HMAC-SHA256 conforme au vecteur de référence"
+    if not check("Calcul de la signature appsecret_proof (auto-test du code)", _kat):
+        return out
+
+    if cfg.app_id:
+        def _owner():
+            d = client.debug_token()
+            if not d.get("is_valid"):
+                raise m.MetaConfigError(f"jeton invalide selon Meta ({(d.get('error') or {}).get('message', 'sans détail')})")
+            if str(d.get("app_id")) != str(cfg.app_id):
+                raise m.MetaConfigError("le jeton a été généré pour une AUTRE application que META_APP_ID : "
+                                        "régénérer le jeton avec la bonne app, ou corriger META_APP_ID/META_APP_SECRET")
+            exp = d.get("expires_at", 0)
+            return (f"jeton émis par l'app META_APP_ID ✔ ; type {d.get('type', '?')} ; "
+                    f"expiration {'jamais' if not exp else exp} ; la clé secrète correspond à l'app ✔")
+        check("Correspondance jeton ↔ application ↔ clé secrète", _owner)
+    else:
+        out.append(("Correspondance jeton ↔ application ↔ clé secrète", CONFIG,
+                    "variable META_APP_ID absente : ajoutez-la pour un diagnostic précis (valeur publique)"))
+
+    def _me():
+        try:
+            return f"identité {client.call('GET', 'me', fields='id,name').get('name', '?')} (requête signée ✔)"
+        except m.MetaError as exc:
+            if "appsecret_proof" not in str(exc).lower():
+                raise
+            # Diagnostic probe ONLY: same request without signature.
+            try:
+                client.call("GET", "me", sign=False, retries=0, fields="id")
+                verdict = ("le jeton fonctionne SANS signature mais pas AVEC : la clé secrète META_APP_SECRET "
+                           "n'appartient pas à l'application qui a généré le jeton (configuration, pas le code)")
+            except m.MetaError as exc2:
+                if "appsecret_proof" in str(exc2).lower() or "app secret" in str(exc2).lower():
+                    verdict = ("« Exiger la clé secrète » est actif et la signature est refusée : la clé secrète "
+                               "ne correspond pas à l'app du jeton (le calcul du code est vérifié par l'auto-test)")
+                else:
+                    verdict = f"le jeton lui-même est refusé ({exc2})"
+            raise m.MetaConfigError(verdict) from exc
+    if not check("Jeton système valide", _me):
+        return out
     check("Autorisations", lambda: _scopes(client))
-    if not check("Accès à la Page (jeton de Page dérivé)", lambda: (client.page_token(), "OK")[1]):
+    if not check("Accès à la Page (jeton de Page dérivé, signé séparément)", lambda: (client.page_token(), "OK")[1]):
         return out
     check("Page Facebook", lambda: client.page_info().get("name", "?"))
     check("Compte Instagram lié", lambda: f"IG id {client.ig_user_id()}")
@@ -158,7 +224,7 @@ def diagnose(client: MetaClient, base_url: str | None, sample_image: str | None 
                 return f"conteneur {cid} {st} — NON publié (expire seul sous 24 h)"
             check("Conteneur Instagram de test (non publié)", _container)
     else:
-        out.append(("Image publique (GitHub Pages)", False, "PUBLIC_BASE_URL ou image d'exemple absente"))
+        out.append(("Image publique (GitHub Pages)", CONFIG, "PUBLIC_BASE_URL ou image d'exemple absente"))
     return out
 
 

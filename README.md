@@ -48,7 +48,7 @@ Preview locally: `python scripts/phase2_preview.py --start 2026-11-16` → `site
 src/comptoir/catalog.py   Shopify fetch (products.json, optional Storefront API) + normalisation
 src/comptoir/design.py    Graphic system (Direction A)
 src/comptoir/media.py     Image/logo download with cache
-tests/                    pytest suite (91 tests, Meta fully mocked) + catalogue snapshot
+tests/                    pytest suite (112 tests, Meta fully mocked) + catalogue snapshot
 assets/fonts/da           Inter Tight, Instrument Serif (SIL OFL)  ·  assets/logo.png  site logo
 site/                     Folder to be served by GitHub Pages (public images for Meta)
 ```
@@ -95,6 +95,8 @@ Publishing flow: public image check (200, JPEG, size) → IG container → statu
 
 GitHub → repo → Settings → Secrets and variables → Actions → *New repository secret*:
 Secrets: `WHATSAPP_NUMBER`, `META_SYSTEM_USER_TOKEN`, `META_APP_SECRET`, `META_PAGE_ID`, `META_IG_USER_ID` (optional, auto-discovered). Optional: `SHOPIFY_STOREFRONT_TOKEN`.
-Variable (not secret): `PUBLIC_BASE_URL` = `https://<account>.github.io/<repo>`.
+Variables (not secret): `PUBLIC_BASE_URL` = `https://<account>.github.io/<repo>`, `META_APP_ID` = the Meta app ID (lets the diagnostic prove that token, app and app secret belong together).
+
+Diagnostic categories: `OK`, `CONFIG` (secrets / Meta app / account settings — the code is not at fault), `META` (API refused or unavailable), `ERREUR CODE` (bug in this program). Secrets are trimmed of accidental spaces/line breaks and never printed (only length and format).
 
 Live publishing requires a committed `config/LIVE_ENABLED` file — created only after explicit approval (phase 4).

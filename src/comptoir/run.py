@@ -129,8 +129,11 @@ def _settings() -> dict:
 
 
 def _client():
-    from .meta import MetaClient, MetaConfig
-    return MetaClient(MetaConfig.from_env(_settings()["meta"]["graph_version"]))
+    from .meta import MetaClient, MetaConfig, MetaConfigError
+    try:
+        return MetaClient(MetaConfig.from_env(_settings()["meta"]["graph_version"]))
+    except MetaConfigError as exc:
+        sys.exit(f"[CONFIG     ] {exc}")
 
 
 def _base_url() -> str:
@@ -188,14 +191,23 @@ def cmd_meta_check(args):
         sample = f"site/media/{jpgs[0].name}" if jpgs else None
     base = os.environ.get("PUBLIC_BASE_URL", "").strip() or None
     rows = diagnose(client, base, sample, container_test=args.container_test)
-    ok = all(r[1] for r in rows)
-    for name, good, detail in rows:
-        print(f"{'OK ' if good else 'ÉCHEC'}  {name}: {redact(detail)}")
-    print("\nRappel : un diagnostic réussi ne prouve pas qu'une publication réelle fonctionnera ;"
+    ok = all(r[1] == "OK" for r in rows)
+    for name, cat, detail in rows:
+        tag = {"OK": "OK         ", "CONFIGURATION": "CONFIG     ", "META": "META       ", "CODE": "ERREUR CODE"}[cat]
+        print(f"[{tag}] {name} : {redact(detail)}")
+    cats = {r[1] for r in rows}
+    print()
+    if "CODE" in cats:
+        print("→ Au moins une ERREUR CODE : problème dans le programme, à corriger dans le dépôt.")
+    elif "CONFIGURATION" in cats:
+        print("→ Problème de CONFIGURATION (secrets, app Meta ou compte) : le code n'est pas en cause.")
+    elif "META" in cats:
+        print("→ Meta a refusé ou n'a pas répondu : voir le détail (souvent temporaire ou lié aux droits).")
+    print("Rappel : un diagnostic réussi ne prouve pas qu'une publication réelle fonctionnera ;"
           " seule la publication de test (après accord) le prouve.")
     (ROOT / "data" / "meta_check.json").write_text(json.dumps(
         {"ts": datetime.now(TZ).isoformat(timespec="seconds"), "ok": ok,
-         "checks": [{"name": n, "ok": g, "detail": redact(d)} for n, g, d in rows]}, ensure_ascii=False, indent=1))
+         "checks": [{"name": n, "category": c, "detail": redact(d)} for n, c, d in rows]}, ensure_ascii=False, indent=1))
     if not ok:
         sys.exit(1)
 

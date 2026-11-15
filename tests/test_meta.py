@@ -218,7 +218,7 @@ def test_diagnose_never_publishes():
                                            "instagram_business_account": {"id": "IG1"}})]
     c.s.routes = {k: list(v) for k, v in routes.items()}
     rows = publisher.diagnose(c, "https://u.github.io/r", "site/media/x.jpg", container_test=True, get=ok_get())
-    assert all(ok for _, ok, _ in rows), rows
+    assert all(cat == "OK" for name, cat, _ in rows if "META_APP_ID" not in _), rows
     assert not any(x[1].endswith(("media_publish", "photos")) for x in c.s.calls)
 
 

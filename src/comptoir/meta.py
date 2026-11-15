@@ -45,6 +45,61 @@ class AmbiguousPublish(MetaError):
     """The publish call may or may not have gone through: never retry blindly."""
 
 
+class MetaConfigError(MetaError):
+    """Configuration problem (secrets, app settings, Meta account) — not a code bug."""
+
+
+def appsecret_proof(app_secret: str, token: str) -> str:
+    """Meta signature: HMAC-SHA256, key = app secret, message = the exact
+    access token sent with the request, hex digest."""
+    return hmac.new(app_secret.encode("utf-8"), token.encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+# Known-answer test (RFC 4231-style vector) — proves the HMAC code path itself.
+_KAT = ("key", "The quick brown fox jumps over the lazy dog",
+        "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8")
+
+
+def self_test_signature() -> bool:
+    return appsecret_proof(_KAT[0], _KAT[1]) == _KAT[2]
+
+
+def clean_secret(name: str, raw: str | None, notes: list[str]) -> str | None:
+    """Normalise a secret read from the environment WITHOUT ever printing it.
+    Outer spaces / line breaks / quotes (frequent copy-paste accidents) are
+    removed and reported; inner whitespace is a configuration error."""
+    if raw is None or raw == "":
+        return None
+    v = raw
+    if v != v.strip():
+        notes.append(f"{name} : espaces ou retours à la ligne en début/fin supprimés")
+        v = v.strip()
+    if len(v) >= 2 and v[0] == v[-1] and v[0] in "'\"":
+        notes.append(f"{name} : guillemets autour de la valeur supprimés")
+        v = v[1:-1].strip()
+    if v.lower().startswith("bearer "):
+        notes.append(f"{name} : préfixe « Bearer » supprimé")
+        v = v[7:].strip()
+    if any(c.isspace() for c in v):
+        raise MetaConfigError(f"{name} contient des espaces ou retours à la ligne au milieu : "
+                              "recopier la valeur d'un seul tenant dans le secret GitHub")
+    return v
+
+
+def describe_secret_formats(token: str | None, app_secret: str | None) -> list[str]:
+    """Shape checks that reveal nothing about the values (length / format only)."""
+    out = []
+    if token:
+        out.append(f"jeton : {len(token)} caractères, "
+                   + ("format attendu (EAA…)" if token.startswith("EAA") else "format inhabituel (ne commence pas par EAA)"))
+    if app_secret:
+        ok = len(app_secret) == 32 and all(c in "0123456789abcdef" for c in app_secret)
+        out.append(f"clé secrète : {len(app_secret)} caractères, "
+                   + ("format attendu (32 hexadécimaux)" if ok else
+                      "format inhabituel — une clé secrète d'app Meta fait 32 caractères hexadécimaux"))
+    return out
+
+
 _SECRETS: list[str] = []
 
 
@@ -66,18 +121,35 @@ class MetaConfig:
     ig_user_id: str | None = None
     app_secret: str | None = None
     version: str = "v25.0"
+    app_id: str | None = None                 # public value (GitHub variable META_APP_ID)
+    notes: list = None                        # normalisation notes (never contain values)
 
     @classmethod
     def from_env(cls, version: str = "v25.0") -> "MetaConfig":
-        missing = [k for k in ("META_SYSTEM_USER_TOKEN", "META_PAGE_ID") if not os.environ.get(k)]
+        notes: list[str] = []
+        token = clean_secret("META_SYSTEM_USER_TOKEN", os.environ.get("META_SYSTEM_USER_TOKEN"), notes)
+        page_id = clean_secret("META_PAGE_ID", os.environ.get("META_PAGE_ID"), notes)
+        missing = [k for k, v in (("META_SYSTEM_USER_TOKEN", token), ("META_PAGE_ID", page_id)) if not v]
         if missing:
-            raise MetaError(f"secrets GitHub manquants : {', '.join(missing)}")
-        cfg = cls(token=os.environ["META_SYSTEM_USER_TOKEN"], page_id=os.environ["META_PAGE_ID"].strip(),
-                  ig_user_id=(os.environ.get("META_IG_USER_ID") or "").strip() or None,
-                  app_secret=os.environ.get("META_APP_SECRET") or None, version=version)
+            raise MetaConfigError(f"secrets GitHub manquants : {', '.join(missing)}")
+        if not page_id.isdigit():
+            raise MetaConfigError("META_PAGE_ID doit être un identifiant numérique")
+        cfg = cls(token=token, page_id=page_id,
+                  ig_user_id=clean_secret("META_IG_USER_ID", os.environ.get("META_IG_USER_ID"), notes),
+                  app_secret=clean_secret("META_APP_SECRET", os.environ.get("META_APP_SECRET"), notes),
+                  version=version,
+                  app_id=clean_secret("META_APP_ID", os.environ.get("META_APP_ID"), notes),
+                  notes=notes)
         register_secret(cfg.token)
         register_secret(cfg.app_secret)
         return cfg
+
+
+def _is_config_error(code, message: str) -> bool:
+    m = (message or "").lower()
+    return (code == 190                                   # invalid / expired token
+            or code == 10 or code == 200                  # permission not granted
+            or "appsecret_proof" in m or "app secret" in m)
 
 
 class MetaClient:
@@ -93,13 +165,16 @@ class MetaClient:
     def _proof(self, token: str) -> dict:
         if not self.cfg.app_secret:
             return {}
-        return {"appsecret_proof": hmac.new(self.cfg.app_secret.encode(), token.encode(),
-                                            hashlib.sha256).hexdigest()}
+        return {"appsecret_proof": appsecret_proof(self.cfg.app_secret, token)}
 
-    def call(self, method: str, path: str, token: str | None = None, retries: int = 2, **params) -> dict:
+    def call(self, method: str, path: str, token: str | None = None, retries: int = 2,
+             sign: bool = True, **params) -> dict:
+        """`token` defaults to the System User token. The proof is always
+        computed from the exact token sent in this request (a Page token gets
+        its own signature). `sign=False` is used only by the diagnostic probe."""
         token = token or self.cfg.token
         url = f"{GRAPH}/{self.cfg.version}/{path.lstrip('/')}"
-        data = {**params, "access_token": token, **self._proof(token)}
+        data = {**params, "access_token": token, **(self._proof(token) if sign else {})}
         last = None
         for attempt in range(retries + 1):
             try:
@@ -121,7 +196,8 @@ class MetaClient:
                 err = body.get("error", {})
                 code, sub = err.get("code"), err.get("error_subcode")
                 transient = code in TRANSIENT_CODES or r.status_code >= 500 or bool(err.get("is_transient"))
-                last = MetaError(redact(f"Meta {r.status_code} code={code} sub={sub}: {err.get('message', r.text[:200])}"),
+                kind = MetaConfigError if _is_config_error(code, err.get("message", "")) else MetaError
+                last = kind(redact(f"Meta {r.status_code} code={code} sub={sub}: {err.get('message', r.text[:200])}"),
                                  code=code, subcode=sub, transient=transient, status=r.status_code)
                 if not transient:
                     raise last
@@ -152,6 +228,22 @@ class MetaClient:
             raise MetaError("aucun compte Instagram professionnel lié à la Page")
         self.cfg.ig_user_id = ig["id"]
         return ig["id"]
+
+    def debug_token(self) -> dict:
+        """Which app issued the token, validity, type, scopes. Uses the app
+        access token APP_ID|APP_SECRET: if that is rejected, the secret does
+        not belong to META_APP_ID."""
+        if not (self.cfg.app_id and self.cfg.app_secret):
+            raise MetaConfigError("META_APP_ID (variable) ou META_APP_SECRET absent : contrôle d'appartenance impossible")
+        app_token = f"{self.cfg.app_id}|{self.cfg.app_secret}"
+        register_secret(app_token)
+        try:
+            body = self.call("GET", "debug_token", token=app_token, sign=False, retries=0,
+                             input_token=self.cfg.token)
+        except MetaError as exc:
+            raise MetaConfigError("la clé secrète ne correspond pas à l'application META_APP_ID "
+                                  f"(Meta refuse le jeton d'application) — {exc}") from exc
+        return body.get("data", {})
 
     def permissions(self) -> set[str]:
         body = self.call("GET", "me/permissions")

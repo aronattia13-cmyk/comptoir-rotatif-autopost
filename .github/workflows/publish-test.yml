@@ -35,6 +35,7 @@ jobs:
           META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
           META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
           PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+          META_APP_ID: ${{ vars.META_APP_ID }}
           CONFIRM: ${{ inputs.confirm }}
           SURFACE: ${{ inputs.surface }}
           TARGET_UID: ${{ inputs.uid }}
