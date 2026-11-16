@@ -10,13 +10,18 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_9_4cbebde1-c6cd-4995-ba61-d93b5931132b.png?v=1749133629",
   "category": "contre-angle",
-  "status": "partial",
+  "status": "published",
   "platforms": {
    "instagram": {
     "status": "published",
     "id": "18499671046107102",
     "container": "17916145611550679",
     "permalink": "https://www.instagram.com/p/Dfx6Z9UETLL/"
+   },
+   "facebook": {
+    "status": "published",
+    "id": "1150324318158203_122121827043321317",
+    "permalink": "https://www.facebook.com/122121827061321317/posts/122121827043321317"
    }
   },
   "price": "4529.99",
