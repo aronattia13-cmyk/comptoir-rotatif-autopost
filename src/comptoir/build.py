@@ -2,6 +2,7 @@
 Graphic system: Direction A « Clinique » (comptoir.design)."""
 from __future__ import annotations
 
+import hashlib
 from datetime import date
 from pathlib import Path
 
@@ -33,6 +34,10 @@ def product_shot(p: Product, need_cutout: bool) -> design.Shot:
     if not imgs:
         raise RuntimeError(f"aucune photo téléchargeable pour {p.handle}")
     return design.prepare(imgs[design.choose_photo(imgs)], need_cutout)
+
+
+def file_sha256(path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 def save_jpeg(img: Image.Image, path: Path) -> Path:
@@ -83,6 +88,12 @@ def build_item(item: PlanItem, products: list[Product], articles: list[Article],
 
     path = save_jpeg(img, out_dir / f"{item.uid}.jpg")
     item.payload["image"] = str(path.relative_to(ROOT))
+    item.payload["image_sha256"] = file_sha256(path)
+    if item.payload.get("facebook_image"):
+        item.payload["facebook_image_sha256"] = file_sha256(ROOT / item.payload["facebook_image"])
+    # What the visual and captions actually display (checked before sending).
+    item.payload["rendered_price"] = item.price if item.family == "product" else ""
+    item.payload["rendered_lot"] = item.lot_size if item.family == "product" else 0
     item.payload["caption_instagram"] = "" if story else ig
     item.payload["caption_facebook"] = fb if item.facebook else ""
     item.payload["format"] = "story" if story else post_format

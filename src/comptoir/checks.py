@@ -24,7 +24,10 @@ def check_item(item: PlanItem, catalog: list[Product], verify_urls: bool = True)
             if p.price != Decimal(item.price):
                 errors.append(f"prix modifié dans Shopify ({item.price} -> {p.price}) : visuel à régénérer")
             if p.lot_size != item.lot_size:
-                errors.append("taille de lot modifiée")
+                errors.append("taille de lot modifiée : visuel à régénérer")
+            shown = item.payload.get("rendered_price")
+            if shown and Decimal(shown) != Decimal(item.price):
+                errors.append(f"le visuel affiche un ancien prix ({shown} au lieu de {item.price}) : visuel à régénérer")
         if verify_urls and item.url and not check_url(item.url):
             errors.append(f"fiche produit injoignable: {item.url}")
     elif item.family == "blog":
@@ -33,6 +36,12 @@ def check_item(item: PlanItem, catalog: list[Product], verify_urls: bool = True)
         elif verify_urls and not check_url(item.url):
             errors.append(f"article injoignable: {item.url}")
     return errors
+
+
+def needs_regeneration(errors: list[str]) -> bool:
+    """True when every blocking error is fixed by re-rendering (price / lot /
+    stale image): the slot is kept and retried after regeneration."""
+    return bool(errors) and all("régénérer" in e for e in errors)
 
 
 def scan_for_secrets(text: str, secrets: list[str]) -> bool:

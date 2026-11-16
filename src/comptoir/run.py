@@ -90,7 +90,6 @@ def cmd_due(args):
     mode = args.mode
     if mode == "auto":
         mode = "live" if LIVE_FLAG.exists() else "test"
-        log("mode", mode=mode)
     if mode == "live" and not LIVE_FLAG.exists():
         sys.exit("Publication réelle verrouillée : config/LIVE_ENABLED absent (validation phase 4 requise).")
     products = catalog.load_catalog(storefront_token=os.environ.get("SHOPIFY_STOREFRONT_TOKEN") or None)
@@ -101,12 +100,16 @@ def cmd_due(args):
     activated = live_activated_at() if mode == "live" else None
     problems = 0
     client = None
+    announced = False
     secrets = [os.environ.get(k, "") for k in ("META_SYSTEM_USER_TOKEN", "META_APP_SECRET", "SHOPIFY_STOREFRONT_TOKEN")]
     for q in queue:
         it = planner.PlanItem(**{**q, "status": "planned" if q["status"] == "partial" else q["status"]})
         if q["status"] not in ("planned", "partial") or it.scheduled_at() > now or history.is_published(it.uid):
             continue
         e = history.get(it.uid)
+        if not announced:
+            log("mode", mode=mode)
+            announced = True
         late = now - it.scheduled_at()
         if mode == "live" and (late > max_delay or (activated and it.scheduled_at() < activated)):
             # No catch-up: a past slot is never published late.
@@ -119,6 +122,13 @@ def cmd_due(args):
         text = (it.payload.get("caption_instagram", "") + it.payload.get("caption_facebook", ""))
         if checks.scan_for_secrets(text, secrets):
             errors.append("secret détecté dans une légende")
+        if errors and checks.needs_regeneration(errors):
+            # Price / lot changed or visual outdated: never sent; the refresh
+            # step regenerates and redeploys, the slot is retried next run
+            # (within the 90-min window, otherwise "missed").
+            q["reason"] = "en attente de régénération : " + "; ".join(errors)
+            log("bloqué — visuel à régénérer, nouvel essai au prochain passage", uid=it.uid, errors=errors)
+            continue
         if errors:
             problems += 1
             q["status"] = "blocked"
@@ -137,7 +147,8 @@ def cmd_due(args):
         else:
             client = client or _client()
             _publish_one(q, e, client=client)
-            if q["status"] in ("failed", "uncertain", "partial"):
+            if q["status"] in ("failed", "uncertain") or (
+                    q["status"] == "partial" and any(v.get("status") == "failed" for v in (e.platforms if e else {}).values())):
                 problems += 1
     history.save()
     save_queue(queue)
@@ -181,7 +192,7 @@ def _publish_one(q: dict, e, client, only: str | None = None) -> None:
     """Real publication of one queue item, with per-platform idempotency.
     only='instagram' or 'facebook' restricts this run to one network (tests)."""
     from .meta import MetaError, redact
-    from .publisher import MediaNotPublic, publish_item
+    from .publisher import MediaNotPublic, StaleMedia, publish_item
     cfg = _settings()["meta"]
     done = {k for k, v in (e.platforms if e else {}).items() if v.get("status") == "published"}
     if only:
@@ -192,6 +203,11 @@ def _publish_one(q: dict, e, client, only: str | None = None) -> None:
     try:
         res = publish_item(q, client, _base_url(), done,
                            poll=cfg["container_poll_seconds"], timeout=cfg["container_timeout_seconds"])
+    except StaleMedia as exc:
+        # Old visual still online: nothing sent, retried after redeploy.
+        q["reason"] = redact(str(exc))
+        log("image en ligne pas encore à jour — rien envoyé, nouvel essai", uid=q["uid"])
+        return
     except (MetaError, MediaNotPublic) as exc:
         msg = redact(str(exc))
         q["status"], q["reason"] = "failed", msg
@@ -219,6 +235,67 @@ def _publish_one(q: dict, e, client, only: str | None = None) -> None:
         if e:
             e.status = "partial"
         log("publication partielle", uid=q["uid"], results=res)
+
+
+def cmd_refresh(args):
+    """Before every publication pass: compare live Shopify data with every
+    future, not-fully-published product slot. If price, lot size or name
+    changed (or the visual shows another price), regenerate visual and
+    captions. Sets GitHub output site_changed=true so the workflow redeploys
+    GitHub Pages BEFORE anything is sent to Meta."""
+    from decimal import Decimal
+    products = catalog.load_catalog(storefront_token=os.environ.get("SHOPIFY_STOREFRONT_TOKEN") or None)
+    art_file = ROOT / "data" / "articles.json"
+    articles = blog.from_dicts(json.loads(art_file.read_text())) if art_file.exists() else []
+    history = History.load()
+    queue = load_queue()
+    today = date.today().isoformat()
+    site_changed = data_changed = False
+    for q in queue:
+        e = history.get(q["uid"])
+        if q["status"] not in ("planned", "partial") or q["date"] < today:
+            continue
+        payload = q.get("payload", {})
+        for key, img in (("image_sha256", payload.get("image")), ("facebook_image_sha256", payload.get("facebook_image"))):
+            if img and not payload.get(key) and (ROOT / img).exists():
+                payload[key] = build.file_sha256(ROOT / img)          # backfill (older items)
+                data_changed = True
+        if q["family"] != "product":
+            continue
+        p = next((x for x in products if x.handle == q["reference"]), None)
+        published_somewhere = bool(e and any(v.get("status") == "published" for v in e.platforms.values()))
+        if p is None or not p.available:
+            if not published_somewhere:
+                q["status"], q["reason"] = "skipped", "produit indisponible ou retiré de Shopify"
+                if e:
+                    e.status, e.error = "skipped", q["reason"]
+                log("créneau annulé — produit indisponible", uid=q["uid"])
+                data_changed = True
+            continue
+        shown = payload.get("rendered_price") or q["price"]
+        if (p.price == Decimal(q["price"]) and Decimal(shown) == p.price
+                and p.lot_size == q["lot_size"] and p.display_name == q["title"]):
+            continue
+        old = shown
+        it = planner.PlanItem(**{**q, "status": "planned"})
+        it.price, it.lot_size, it.title = str(p.price), p.lot_size, p.display_name
+        build.build_item(it, products, articles)
+        q.update({k: v for k, v in it.to_dict().items() if k != "status"})
+        if e:
+            e.price = it.price
+        site_changed = data_changed = True
+        log("visuel régénéré — prix Shopify modifié", uid=q["uid"], ancien=old, nouveau=it.price)
+    if data_changed:
+        history.save()
+        save_queue(queue)
+    if site_changed:
+        write_dashboard(products, articles, history, queue)
+        write_bio_page(articles, products, queue)
+    out = os.environ.get("GITHUB_OUTPUT")
+    if out:
+        with open(out, "a") as f:
+            f.write(f"site_changed={'true' if site_changed else 'false'}\n")
+    print(f"refresh: visuels régénérés={site_changed}")
 
 
 def cmd_rebuild(args):
@@ -411,6 +488,7 @@ def main(argv=None):
     d = sub.add_parser("due")
     d.add_argument("--mode", choices=["test", "live", "auto"], default=os.environ.get("PUBLISH_MODE", "test"))
     sub.add_parser("rebuild")
+    sub.add_parser("refresh")
     c = sub.add_parser("meta-check")
     c.add_argument("--container-test", action="store_true")
     t = sub.add_parser("publish-test")
@@ -419,7 +497,7 @@ def main(argv=None):
     t.add_argument("--surface", choices=["", "post", "story"], default="")
     t.add_argument("--platform", choices=["", "both", "instagram", "facebook"], default="both")
     args = ap.parse_args(argv)
-    {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check, "rebuild": cmd_rebuild,
+    {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check, "rebuild": cmd_rebuild, "refresh": cmd_refresh,
      "publish-test": cmd_publish_test}[args.cmd](args)
 
 

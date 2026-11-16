@@ -49,7 +49,7 @@ Preview locally: `python scripts/phase2_preview.py --start 2026-11-16` → `site
 src/comptoir/catalog.py   Shopify fetch (products.json, optional Storefront API) + normalisation
 src/comptoir/design.py    Graphic system (Direction A)
 src/comptoir/media.py     Image/logo download with cache
-tests/                    pytest suite (124 tests, Meta fully mocked) + catalogue snapshot
+tests/                    pytest suite (141 tests, Meta fully mocked) + catalogue snapshot
 assets/fonts/da           Inter Tight, Instrument Serif (SIL OFL)  ·  assets/logo.png  site logo
 site/                     Folder to be served by GitHub Pages (public images for Meta)
 ```
@@ -99,7 +99,8 @@ Publishing flow: public image check (200, JPEG, size) → IG container → statu
 - `due.yml` runs every 30 min on weekdays (UTC cron covering 12:30 and 18:30 Europe/Paris, summer and winter); slot times are computed in Europe/Paris.
 - No catch-up: a slot more than 90 min late, or scheduled before `activated_at`, is marked `missed` and never published.
 - Per-platform idempotency + history: nothing already published is sent twice. Failures turn the run red (GitHub e-mail) and are not retried automatically.
-- `python -m comptoir.run rebuild` re-renders future, unpublished items with current Shopify prices; `pages.yml` redeploys the visuals.
+- **Price changes**: every `due` run starts with `refresh` — live Shopify prices are compared with every future product visual; on any change (price, lot, name, or a visual showing another price) the visual and captions are regenerated and GitHub Pages is redeployed before publishing. At publish time the price shown on the visual is checked again and the image served by Pages must match the regenerated file byte for byte (SHA-256); otherwise nothing is sent and the slot is retried on the next run (within the 90-min window).
+- `python -m comptoir.run rebuild` re-renders all future, unpublished items; `pages.yml` redeploys the visuals.
 
 ## Secrets (never in the repo or in chat)
 

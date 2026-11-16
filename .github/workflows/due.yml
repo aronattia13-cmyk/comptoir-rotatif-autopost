@@ -1,20 +1,72 @@
 # Publications that are due, every 30 minutes on weekdays.
+#
+# 1. refresh : compare live Shopify prices with every future product visual;
+#              regenerate visual + captions when a price / lot / name changed.
+# 2. deploy  : if a visual was regenerated, redeploy GitHub Pages first.
+# 3. due     : publish what is due. Before sending, the price shown on the
+#              visual and the exact bytes served by GitHub Pages (SHA-256)
+#              are checked: an outdated image is never sent to Meta.
+#
 # Mode is decided by the repository itself:
-#   - config/LIVE_ENABLED absent  -> TEST: safety checks, items marked "simulated"
-#   - config/LIVE_ENABLED present -> real publication (created only after David's approval)
+#   - config/LIVE_ENABLED absent  -> TEST (nothing published)
+#   - config/LIVE_ENABLED present -> real publication
 name: Publications du jour
 on:
   schedule:
     - cron: "7,37 8-19 * * 1-5"     # UTC; covers 12:30 and 18:30 Europe/Paris, winter and summer
   workflow_dispatch:
-permissions:
-  contents: write
 concurrency: { group: comptoir-state, cancel-in-progress: false }
 jobs:
-  due:
+  refresh:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      site_changed: ${{ steps.refresh.outputs.site_changed }}
     steps:
       - uses: actions/checkout@v5
+        with: { ref: main }
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: sudo apt-get install -y --no-install-recommends libfribidi0   # kerning (raqm)
+      - run: pip install -r requirements.txt
+      - id: refresh
+        env:
+          PYTHONPATH: src
+          WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }}
+        run: python -m comptoir.run refresh
+      - run: |
+          git config user.name "comptoir-bot"
+          git config user.email "comptoir-bot@users.noreply.github.com"
+          git add data site
+          git diff --cached --quiet || git commit -m "Visuels actualisés (prix Shopify) $(date -u +%F-%H%M)"
+          git pull --rebase -q && git push
+
+  deploy:
+    needs: refresh
+    if: needs.refresh.outputs.site_changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment: { name: github-pages }
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: main }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+      - uses: actions/deploy-pages@v4
+
+  due:
+    needs: [refresh, deploy]
+    if: ${{ always() && needs.refresh.result == 'success' && needs.deploy.result != 'failure' && needs.deploy.result != 'cancelled' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: main }
       - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt

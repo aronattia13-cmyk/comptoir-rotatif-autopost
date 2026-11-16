@@ -12,6 +12,7 @@ Safety rules
 """
 from __future__ import annotations
 
+import hashlib
 import io
 from datetime import datetime, timedelta, timezone
 
@@ -29,13 +30,18 @@ class MediaNotPublic(RuntimeError):
     pass
 
 
+class StaleMedia(MediaNotPublic):
+    """GitHub Pages still serves an older version of the visual."""
+
+
 def public_url(base_url: str, rel_path: str) -> str:
     """site/media/x.jpg -> https://<user>.github.io/<repo>/media/x.jpg"""
     rel = rel_path.split("site/", 1)[-1] if rel_path.startswith("site/") else rel_path
     return base_url.rstrip("/") + "/" + rel.lstrip("/")
 
 
-def verify_public_image(url: str, expected_size: tuple[int, int] | None = None, get=None) -> dict:
+def verify_public_image(url: str, expected_size: tuple[int, int] | None = None, get=None,
+                        expected_sha256: str | None = None) -> dict:
     get = get or (lambda u: net.get(u, timeout=30, retries=2))
     try:
         r = get(url)
@@ -48,6 +54,8 @@ def verify_public_image(url: str, expected_size: tuple[int, int] | None = None, 
         raise MediaNotPublic(f"type {ctype or 'inconnu'} au lieu de image/jpeg: {url}")
     if len(r.content) > MAX_BYTES:
         raise MediaNotPublic(f"image trop lourde ({len(r.content)} octets)")
+    if expected_sha256 and hashlib.sha256(r.content).hexdigest() != expected_sha256:
+        raise StaleMedia(f"image publique pas à jour (ancienne version encore en ligne) : {url}")
     with Image.open(io.BytesIO(r.content)) as im:
         if im.format != "JPEG":
             raise MediaNotPublic(f"format {im.format}")
@@ -84,7 +92,8 @@ def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
     # -- Instagram --------------------------------------------------------
     if "instagram" not in done:
         url = public_url(base_url, payload["image"])
-        verify_public_image(url, SIZES["story" if story else "portrait"], get=get)
+        verify_public_image(url, SIZES["story" if story else "portrait"], get=get,
+                            expected_sha256=payload.get("image_sha256"))
         caption = "" if story else payload.get("caption_instagram", "")
         started = datetime.now(timezone.utc) - timedelta(minutes=2)
         cid = client.ig_create_container(url, caption, story=story)
@@ -106,10 +115,11 @@ def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
         if story and not payload.get("facebook_image"):
             return results                          # no vertical story on the Page feed
         url = public_url(base_url, img)
-        verify_public_image(url, SIZES["portrait"], get=get)
+        sha = payload.get("facebook_image_sha256") if payload.get("facebook_image") else payload.get("image_sha256")
         caption = payload.get("caption_facebook", "")
         started = datetime.now(timezone.utc) - timedelta(minutes=2)
         try:
+            verify_public_image(url, SIZES["portrait"], get=get, expected_sha256=sha)
             body = client.fb_photo(url, caption, published=True)
             pid = body.get("post_id") or body.get("id")
         except AmbiguousPublish as exc:
@@ -118,6 +128,15 @@ def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
                 results["facebook"] = {"status": "uncertain", "error": str(exc)}
                 return results
             pid = found["id"]
+        except StaleMedia as exc:
+            # Keep what Instagram already did; Facebook is retried after redeploy.
+            results["facebook"] = {"status": "retry", "error": str(exc)}
+            return results
+        except (MetaError, MediaNotPublic) as exc:
+            if not results:
+                raise
+            results["facebook"] = {"status": "failed", "error": str(exc)}
+            return results
         results["facebook"] = {"status": "published", "id": pid, "permalink": client.fb_permalink(pid)}
     return results
 
