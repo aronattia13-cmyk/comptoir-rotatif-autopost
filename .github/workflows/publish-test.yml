@@ -21,6 +21,10 @@ on:
         description: "Identifiant précis (optionnel, sinon le prochain élément planifié)"
         required: false
         default: ""
+      recover_failed:
+        description: "Rattrapage UNIQUE d'un élément en échec (Instagram seul, uid obligatoire, jamais publié, < 7 jours)"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: { group: comptoir-state, cancel-in-progress: false }
@@ -45,7 +49,8 @@ jobs:
           SURFACE: ${{ inputs.surface }}
           PLATFORM: ${{ inputs.platform }}
           TARGET_UID: ${{ inputs.uid }}
-        run: python -m comptoir.run publish-test --confirm "$CONFIRM" --surface "$SURFACE" --platform "$PLATFORM" --uid "$TARGET_UID"
+          RECOVER: ${{ inputs.recover_failed && '--recover-failed' || '' }}
+        run: python -m comptoir.run publish-test --confirm "$CONFIRM" --surface "$SURFACE" --platform "$PLATFORM" --uid "$TARGET_UID" $RECOVER
       - if: always()
         run: |
           git config user.name "comptoir-bot"

@@ -29,6 +29,11 @@ QUEUE = ROOT / "data" / "queue.json"
 LOG = ROOT / "data" / "log.jsonl"
 SITE = ROOT / "site"
 TZ = ZoneInfo("Europe/Paris")
+
+
+def paris_today() -> date:
+    """Calendar date in Paris, whatever the machine's time zone (GitHub runners use UTC)."""
+    return datetime.now(TZ).date()
 LIVE_FLAG = ROOT / "config" / "LIVE_ENABLED"
 
 
@@ -65,9 +70,9 @@ def cmd_weekly(args):
         articles=len(blog.usable(articles)))
 
     history = History.load()
-    start = date.today() + timedelta(days=1)
+    start = paris_today() + timedelta(days=1)
     items = planner.Planner(products, articles, history).plan(start, args.days)
-    queue = [q for q in load_queue() if q["status"] in ("planned",) and q["date"] >= date.today().isoformat()]
+    queue = [q for q in load_queue() if q["status"] in ("planned",) and q["date"] >= paris_today().isoformat()]
     for it in items:
         try:
             build.build_item(it, products, articles)
@@ -249,7 +254,7 @@ def cmd_refresh(args):
     articles = blog.from_dicts(json.loads(art_file.read_text())) if art_file.exists() else []
     history = History.load()
     queue = load_queue()
-    today = date.today().isoformat()
+    today = paris_today().isoformat()
     site_changed = data_changed = False
     for q in queue:
         e = history.get(q["uid"])
@@ -306,7 +311,7 @@ def cmd_rebuild(args):
     articles = blog.from_dicts(json.loads((ROOT / "data" / "articles.json").read_text()))
     history = History.load()
     queue = load_queue()
-    today = date.today().isoformat()
+    today = paris_today().isoformat()
     for q in queue:
         e = history.get(q["uid"])
         if q["status"] != "planned" or q["date"] < today or (e and e.platforms):
@@ -374,7 +379,13 @@ def cmd_publish_test(args):
         sys.exit(f"Refus : phrase de confirmation attendue « {CONFIRM_PHRASE} ».")
     history = History.load()
     queue = load_queue()
+    recover = getattr(args, "recover_failed", False)
     allowed = ("planned", "partial", "simulated") if args.uid else ("planned", "partial")
+    if recover:
+        # ONE manual catch-up of a FAILED item, Instagram only, never published before.
+        if not args.uid or args.platform != "instagram":
+            sys.exit("Rattrapage refusé : --uid précis et --platform instagram obligatoires.")
+        allowed = ("failed",)
     cands = [q for q in queue if q["status"] in allowed and (args.uid in ("", q["uid"]))]
     if args.surface:
         cands = [q for q in cands if q["surface"] == args.surface]
@@ -385,15 +396,33 @@ def cmd_publish_test(args):
     if not cands:
         sys.exit("Aucun élément planifié correspondant dans la file.")
     q = cands[0]
+    e = history.get(q["uid"])
+    if recover:
+        if e is None:
+            sys.exit("Rattrapage refusé : élément absent de l'historique.")
+        if any(v.get("status") in ("published", "uncertain") for v in e.platforms.values()):
+            sys.exit("Rattrapage refusé : déjà publié ou statut incertain sur une plateforme.")
+        if date.fromisoformat(q["date"]) < datetime.now(TZ).date() - timedelta(days=7):
+            sys.exit("Rattrapage refusé : élément de plus de 7 jours.")
+        q["status"] = "planned"                       # only for the content checks below
     products = catalog.load_catalog()
     errors = checks.check_item(planner.PlanItem(**q), products)
     if errors:
+        if recover:
+            q["status"] = "failed"
         sys.exit("Contrôles bloquants : " + "; ".join(errors))
-    e = history.get(q["uid"])
     log("PUBLICATION DE TEST demandée", uid=q["uid"], title=q["title"], platform=only or "both")
     if q["status"] == "simulated":
         q["status"] = "planned"
     _publish_one(q, e, client=_client(), only=only)
+    if recover:
+        ig = (e.platforms if e else {}).get("instagram", {})
+        if ig.get("status") == "published":
+            e.platforms["facebook"] = {"status": "skipped", "reason": "rattrapage Instagram uniquement (accord explicite)"}
+            q["status"], q["reason"], e.status, e.error = "published", "", "published", ""
+            log("RATTRAPAGE publié sur Instagram", uid=q["uid"], id=ig.get("id"))
+        elif q["status"] == "planned":                # nothing sent (e.g. stale media): back to failed
+            q["status"] = "failed"
     for k, v in (e.platforms if e else {}).items():
         print(f"RÉSULTAT {k}: {v.get('status')} {v.get('permalink') or v.get('id') or v.get('error', '')}")
     history.save()
@@ -452,10 +481,10 @@ def write_bio_page(articles, products, queue=None):
     if wa:
         sections.append(("Gravure personnalisée", [("Renseignements sur WhatsApp", wa)]))
     feat, seen = [], set()
-    today = date.today().isoformat()
+    today = paris_today().isoformat()
     for q in sorted(queue or [], key=lambda q: q["date"], reverse=True):
         if q.get("status") in ("planned", "published", "partial", "simulated") and q.get("url") \
-                and q["date"] >= (date.today() - timedelta(days=14)).isoformat() and q["url"] not in seen:
+                and q["date"] >= (paris_today() - timedelta(days=14)).isoformat() and q["url"] not in seen:
             if q["family"] == "product" and q["date"] <= today or q["family"] == "blog" and q["date"] <= today:
                 label = q["title"] if q["family"] == "blog" else f'{q["title"]} — lot de {q["lot_size"]}'
                 feat.append((label, q["url"]))
@@ -496,6 +525,7 @@ def main(argv=None):
     t.add_argument("--uid", default="")
     t.add_argument("--surface", choices=["", "post", "story"], default="")
     t.add_argument("--platform", choices=["", "both", "instagram", "facebook"], default="both")
+    t.add_argument("--recover-failed", action="store_true")
     args = ap.parse_args(argv)
     {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check, "rebuild": cmd_rebuild, "refresh": cmd_refresh,
      "publish-test": cmd_publish_test}[args.cmd](args)

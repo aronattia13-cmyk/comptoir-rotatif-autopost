@@ -138,7 +138,7 @@ def test_real_live_flag_untouched_by_tests():
 def test_bio_page_excludes_disabled_article_and_adds_whatsapp(tmp_path, monkeypatch, articles):
     monkeypatch.setattr(run, "SITE", tmp_path)
     monkeypatch.setenv("WHATSAPP_NUMBER", "+33 6 12 34 56 78")
-    q = [{"uid": "x", "date": date.today().isoformat(), "status": "planned", "family": "product",
+    q = [{"uid": "x", "date": run.paris_today().isoformat(), "status": "planned", "family": "product",
           "title": "Turbine", "lot_size": 5, "url": "https://lecomptoirdurotatif.com/products/turbine"}]
     run.write_bio_page(articles, [], q)
     page = (tmp_path / "liens" / "index.html").read_text()
