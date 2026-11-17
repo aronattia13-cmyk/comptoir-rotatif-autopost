@@ -18,3 +18,5 @@
 {"ts": "2026-11-16T19:02:05+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-16T19:55:49+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-16T20:57:08+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-17T18:39:06+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-17T18:39:07+01:00", "event": "échec publication", "uid": "2026-11-17-tue-service-story", "error": "Meta 400 code=200 sub=5258005: API access blocked."}

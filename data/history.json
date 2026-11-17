@@ -38,10 +38,10 @@
   "layout": "a-gravure-blanc",
   "photo": "",
   "category": "service",
-  "status": "planned",
+  "status": "failed",
   "platforms": {},
   "price": "",
-  "error": ""
+  "error": "Meta 400 code=200 sub=5258005: API access blocked."
  },
  {
   "uid": "2026-11-18-wed-blog",
