@@ -38,10 +38,21 @@
   "layout": "a-gravure-blanc",
   "photo": "",
   "category": "service",
-  "status": "failed",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18009372173791756",
+    "container": "17916496614550679",
+    "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4032699157546729751"
+   },
+   "facebook": {
+    "status": "skipped",
+    "reason": "rattrapage Instagram uniquement (accord explicite)"
+   }
+  },
   "price": "",
-  "error": "Meta 400 code=200 sub=5258005: API access blocked."
+  "error": ""
  },
  {
   "uid": "2026-11-18-wed-blog",
