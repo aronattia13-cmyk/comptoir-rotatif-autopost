@@ -23,3 +23,5 @@
 {"ts": "2026-11-17T23:40:19+01:00", "event": "PUBLICATION DE TEST demandée", "uid": "2026-11-17-tue-service-story", "title": "Gravure personnalisée de vos instruments", "platform": "instagram"}
 {"ts": "2026-11-17T23:40:36+01:00", "event": "publication partielle", "uid": "2026-11-17-tue-service-story", "results": {"instagram": {"status": "published", "id": "18009372173791756", "container": "17916496614550679", "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4032699157546729751"}}}
 {"ts": "2026-11-17T23:40:36+01:00", "event": "RATTRAPAGE publié sur Instagram", "uid": "2026-11-17-tue-service-story", "id": "18009372173791756"}
+{"ts": "2026-11-18T13:31:25+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-18T13:31:42+01:00", "event": "publié", "uid": "2026-11-18-wed-blog", "links": {"instagram": "https://www.instagram.com/p/Df4gvRpDLj1/", "facebook": "https://www.facebook.com/122121827061321317/posts/122121987063321317"}}

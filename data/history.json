@@ -65,8 +65,20 @@
   "layout": "a-blog",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/articles/Turbine_dentaire_metallique_sur_fond_blanc_2.png?v=1792594425",
   "category": "blog",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "17868986133675433",
+    "container": "17916562857550679",
+    "permalink": "https://www.instagram.com/p/Df4gvRpDLj1/"
+   },
+   "facebook": {
+    "status": "published",
+    "id": "1150324318158203_122121987063321317",
+    "permalink": "https://www.facebook.com/122121827061321317/posts/122121987063321317"
+   }
+  },
   "price": "",
   "error": ""
  },
