@@ -93,8 +93,15 @@
   "layout": "a-brume",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/detartreur3_2.png?v=1750332586",
   "category": "detartreur",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18290230858290971",
+    "container": "17916731676550679",
+    "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4034007381608716694"
+   }
+  },
   "price": "3029.99",
   "error": ""
  },
