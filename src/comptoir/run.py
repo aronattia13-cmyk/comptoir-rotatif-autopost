@@ -122,6 +122,11 @@ def cmd_due(args):
             if e and e.status != "partial":
                 e.status, e.error = "missed", q["reason"]
             log("créneau non rattrapé", uid=it.uid, retard_min=int(late.total_seconds() // 60))
+            if late > max_delay and not (activated and it.scheduled_at() < activated):
+                # An expected publication was NOT sent (e.g. GitHub did not start the scheduled
+                # run in time): the run must be red so the owner is e-mailed — never a silent green.
+                # (A slot that predates LIVE activation is expected and stays green.)
+                problems += 1
             continue
         errors = checks.check_item(it, products)
         text = (it.payload.get("caption_instagram", "") + it.payload.get("caption_facebook", ""))

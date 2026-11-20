@@ -66,7 +66,29 @@ def test_past_slot_is_not_caught_up_after_activation(tmp_path, monkeypatch):
 def test_very_late_slot_is_missed(tmp_path, monkeypatch):
     now = datetime.now(TZ)
     pub = _setup(tmp_path, monkeypatch, scheduled=now - timedelta(hours=3), activated=now - timedelta(days=2))
-    run.main(["due", "--mode", "auto"])
+    with pytest.raises(SystemExit):
+        run.main(["due", "--mode", "auto"])
+    assert pub == [] and run.load_queue()[0]["status"] == "missed"
+
+
+def test_missed_slot_makes_run_red_once_never_silent_green(tmp_path, monkeypatch):
+    """Régression 20/11/2026 : GitHub n'a lancé aucune exécution entre 9 h et 14 h ; le créneau
+    de 12 h 30 aurait été marqué « manqué » dans une exécution VERTE. Il doit la rendre rouge
+    (e-mail au propriétaire), une seule fois, sans jamais publier en retard."""
+    now = datetime.now(TZ)
+    pub = _setup(tmp_path, monkeypatch, scheduled=now - timedelta(minutes=91), activated=now - timedelta(days=4))
+    with pytest.raises(SystemExit) as exc:
+        run.main(["due", "--mode", "auto"])
+    assert "1 publication" in str(exc.value)
+    assert pub == [] and run.load_queue()[0]["status"] == "missed"
+    run.main(["due", "--mode", "auto"])                     # next run: already reported, green, nothing sent
+    assert pub == []
+
+
+def test_slot_before_activation_stays_green(tmp_path, monkeypatch):
+    now = datetime.now(TZ)
+    pub = _setup(tmp_path, monkeypatch, scheduled=now - timedelta(hours=3), activated=now - timedelta(minutes=5))
+    run.main(["due", "--mode", "auto"])                     # expected: no exit, no publication
     assert pub == [] and run.load_queue()[0]["status"] == "missed"
 
 
