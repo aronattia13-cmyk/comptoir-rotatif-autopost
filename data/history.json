@@ -116,9 +116,9 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_22.png?v=1750332884",
   "category": "turbine",
-  "status": "planned",
+  "status": "missed",
   "platforms": {},
   "price": "4709.99",
-  "error": ""
+  "error": "créneau passé (325 min) : non rattrapé"
  }
 ]

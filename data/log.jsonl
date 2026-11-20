@@ -27,3 +27,5 @@
 {"ts": "2026-11-18T13:31:42+01:00", "event": "publié", "uid": "2026-11-18-wed-blog", "links": {"instagram": "https://www.instagram.com/p/Df4gvRpDLj1/", "facebook": "https://www.facebook.com/122121827061321317/posts/122121987063321317"}}
 {"ts": "2026-11-19T18:59:32+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-19T18:59:42+01:00", "event": "publié", "uid": "2026-11-19-thu-product-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4034007381608716694"}}
+{"ts": "2026-11-20T17:55:02+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-20T17:55:02+01:00", "event": "créneau non rattrapé", "uid": "2026-11-20-fri-product-range", "retard_min": 325}
