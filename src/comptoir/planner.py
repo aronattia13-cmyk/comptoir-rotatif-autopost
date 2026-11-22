@@ -385,6 +385,9 @@ class Planner:
             wk = day.isocalendar()[1]
             cats = week_cats.setdefault(wk, [])
             if rotation:
+                forced = (self.s.get("slot_overrides") or {}).get(uid)
+                if forced:
+                    item.family = forced
                 self.fill_rotation(item, day)
             elif s["family"] == "product":
                 p = self.pick_product(day, cats, s["surface"], hard_other_range=False)   # other range preferred

@@ -169,5 +169,9 @@
     "blog": 0.1,
     "service": 0.1
   },
-  "content_mix_window": 28
+  "content_mix_window": 28,
+  "slot_overrides": {
+    "2026-11-24-tue-story": "product"
+  },
+  "_slot_overrides_doc": "Créneau précis -> type imposé (ex. publicité produit à la place d'un conseil retiré). Les règles de rotation, prix Shopify et anti-doublon s'appliquent."
 }

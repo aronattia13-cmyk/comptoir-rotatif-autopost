@@ -413,3 +413,18 @@ def test_jamais_deux_contenus_non_produits_du_meme_type_le_meme_jour(products, a
     for d, fams in by_day.items():
         others = [f for f in fams if f != "product"]
         assert len(others) == len(set(others)), (d, fams)
+
+
+def test_conseil_bagues_supprime_definitivement(products, articles):
+    assert "tip-bague-couleur" not in {t["id"] for t in tips()}
+    items = plan(products, articles, weeks=8)
+    assert not any("bague-couleur" in i.subject or i.title.startswith("Bague bleue, bague rouge") for i in items)
+
+
+def test_creneau_impose_devient_publicite_produit(products, articles):
+    s = dict(SETTINGS, slot_overrides={"2026-11-24-tue-story": "product"})
+    items = planner.simulate(products, articles, History([]), START, 1, settings=s, tips=tips(),
+                             services=services(), service_photos=[])
+    it = next(i for i in items if i.uid == "2026-11-24-tue-story")
+    p = next(x for x in products if x.handle == it.reference)
+    assert it.family == "product" and (it.price, it.lot_size) == (str(p.price), p.lot_size)

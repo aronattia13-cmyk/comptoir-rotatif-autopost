@@ -2,12 +2,6 @@
  "_doc": "Conseils et infos (famille 'tip' du rythme 7 j/7). Seuls les conseils \"validated\": true sont publiés. Brouillons rédigés par Claude le 22/11/2026 : à relire et valider par David (aucune donnée clinique chiffrée, aucune affirmation réglementaire). Délai avant réutilisation : cooldown_days.same_tip (28 jours).",
  "tips": [
   {
-   "id": "tip-bague-couleur",
-   "validated": false,
-   "title": "Bague bleue, bague rouge : que signifie la couleur ?",
-   "body": "La bague indique le rapport de transmission du contre-angle : bleue pour un rapport 1:1, rouge pour un multiplicateur (1:5 le plus souvent). Vérifiez-la avant chaque séance."
-  },
-  {
    "id": "tip-turbine-vs-multiplicateur",
    "validated": false,
    "title": "Turbine ou contre-angle multiplicateur ?",
@@ -216,6 +210,13 @@
    "validated": false,
    "title": "Le coupleur, l'intermédiaire indispensable",
    "body": "Sur un raccord rapide, la turbine se fixe sur un coupleur relié au cordon de l'unit. Coupleur et turbine doivent être compatibles."
+  }
+ ],
+ "_retires": [
+  {
+   "id": "tip-bague-couleur",
+   "date": "2026-11-23",
+   "raison": "supprimé à la demande de David : trop basique pour des chirurgiens-dentistes"
   }
  ]
 }

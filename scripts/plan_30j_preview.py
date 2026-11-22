@@ -15,7 +15,6 @@ LABEL = {"turbine": "Turbines", "satelec": "Détartreurs Satelec/DTE", "ems": "D
          "ca-bleu": "Contre-angles bleus", "ca-rouge": "Contre-angles rouges"}
 LAYOUTS = ["a-blanc", "a-brume", "a-blanc-serif"]
 CONSEILS = [  # sujets pédagogiques : texte à rédiger puis valider par David avant activation
-    "Bague bleue, bague rouge : ce que signifie la couleur d'un contre-angle",
     "Turbine ou contre-angle multiplicateur : les différences d'usage",
     "Raccord rapide : vérifier la compatibilité avec son unit",
     "Satelec/DTE ou EMS/Woodpecker : identifier son générateur avant de commander",
