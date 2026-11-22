@@ -320,3 +320,63 @@ def test_chaque_famille_passe_en_post_et_en_story(products, articles):
     items = [i for i in plan(products, articles, weeks=10) if i.family == "product"]
     for f in SETTINGS["product_families"]:
         assert {i.surface for i in items if fam(products, i) == f} == {"post", "story"}, f
+
+
+# --------------------------------------------- anti-doublon avant envoi chez Meta ----
+class _FakeMeta:
+    def __init__(self, ig=None, fb=None):
+        self.sent = []
+        self._ig, self._fb = ig or [], fb or []
+
+    def ig_recent_media(self, limit=10):
+        return self._ig
+
+    def fb_recent_posts(self, limit=10):
+        return self._fb
+
+    def ig_create_container(self, url, caption, story=False):
+        self.sent.append(("ig", caption)); return "c1"
+
+    def ig_wait_container(self, cid, poll=5, timeout=180):
+        return None
+
+    def ig_publish(self, cid):
+        return "m1"
+
+    def ig_permalink(self, mid):
+        return "https://instagram.com/p/m1"
+
+    def fb_photo(self, url, caption, published=True):
+        self.sent.append(("fb", caption)); return {"post_id": "p1"}
+
+    def fb_permalink(self, pid):
+        return "https://facebook.com/p1"
+
+
+def _post_item():
+    return {"uid": "u", "surface": "post", "facebook": True,
+            "payload": {"image": "site/media/u.jpg", "caption_instagram": "Turbines KaVo\n\nLot de 5",
+                        "caption_facebook": "Turbines KaVo\n\nLot de 5 FB"}}
+
+
+def test_post_deja_present_chez_meta_jamais_republie(monkeypatch):
+    from comptoir import publisher
+    monkeypatch.setattr(publisher, "verify_public_image", lambda *a, **k: None)
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+0000")
+    meta = _FakeMeta(ig=[{"id": "IG9", "caption": "Turbines KaVo\n\nLot de 5", "timestamp": now, "permalink": "https://instagram.com/p/IG9"}],
+                     fb=[{"id": "FB9", "message": "Turbines KaVo\n\nLot de 5 FB", "created_time": now}])
+    res = publisher.publish_item(_post_item(), meta, "https://x.github.io/r", done={})
+    assert meta.sent == []
+    assert res["instagram"]["id"] == "IG9" and res["facebook"]["id"] == "FB9"
+
+
+def test_post_absent_chez_meta_envoye_une_fois_par_reseau(monkeypatch):
+    from comptoir import publisher
+    monkeypatch.setattr(publisher, "verify_public_image", lambda *a, **k: None)
+    meta = _FakeMeta()
+    res = publisher.publish_item(_post_item(), meta, "https://x.github.io/r", done={})
+    assert [k for k, _ in meta.sent] == ["ig", "fb"]
+    assert res["instagram"]["status"] == res["facebook"]["status"] == "published"
+    meta2 = _FakeMeta()
+    publisher.publish_item(_post_item(), meta2, "https://x.github.io/r", done={"instagram": 1, "facebook": 1})
+    assert meta2.sent == []                                   # canal déjà publié : rien n'est renvoyé
