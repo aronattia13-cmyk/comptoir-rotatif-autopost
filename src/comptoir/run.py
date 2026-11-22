@@ -460,7 +460,7 @@ def cmd_publish_test(args):
 
 # --------------------------------------------------------------------- #
 # Contrôle séparé par canal : Story Instagram, Post Instagram, Post Facebook
-CHANNELS = {"story": [("instagram", "Story Instagram")], "post": [("instagram", "Post Instagram"), ("facebook", "Post Facebook")]}
+CHANNELS = {"post": [("instagram", "Post Instagram"), ("facebook", "Post Facebook")], "story": [("instagram", "Story Instagram")]}
 
 
 def expected_channels(q: dict) -> list[tuple[str, str]]:

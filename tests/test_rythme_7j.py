@@ -1,4 +1,4 @@
-"""Rythme 7 j/7 : story Instagram 09:30, post Instagram + Facebook 16:30 (Europe/Paris),
+"""Rythme 7 j/7 : post Instagram + Facebook 09:30, Story Instagram 16:30 (Europe/Paris),
 ~5 publicités produits par semaine, contrôles par canal, rattrapage sans doublon."""
 import json
 import re
@@ -52,9 +52,9 @@ def test_quatorze_creneaux_par_semaine_week_end_compris(products, articles):
     assert len(items) == 14
     for d in range(7):
         day = [i for i in items if date.fromisoformat(i.date).weekday() == d]
-        story, post = sorted(day, key=lambda i: i.time)
-        assert (story.time, story.surface, story.facebook) == ("09:30", "story", False)
-        assert (post.time, post.surface, post.facebook) == ("16:30", "post", True)
+        post, story = sorted(day, key=lambda i: i.time)
+        assert (post.time, post.surface, post.facebook) == ("09:30", "post", True)
+        assert (story.time, story.surface, story.facebook) == ("16:30", "story", False)
 
 
 def test_cinq_publicites_produits_par_semaine_toutes_familles(products, articles):
@@ -74,7 +74,7 @@ def test_jamais_la_meme_famille_deux_jours_de_suite(products, articles):
 
 
 def test_jamais_deux_fois_le_meme_produit_lot_support_visuel(products, articles):
-    prods = [i for i in plan(products, articles, weeks=6) if i.family == "product"]
+    prods = [i for i in plan(products, articles, weeks=8) if i.family == "product"]   # 8 semaines < délai de retour
     keys = Counter((i.reference, i.surface, i.layout) for i in prods)
     assert max(keys.values()) == 1
 
@@ -138,8 +138,8 @@ def _queue_item(uid, surface, time, facebook):
 
 
 def test_controle_separe_story_ig_post_ig_post_fb(monkeypatch):
-    run.save_queue([_queue_item("2026-11-23-mon-story", "story", "09:30", False),
-                    _queue_item("2026-11-23-mon-post", "post", "16:30", True)])
+    run.save_queue([_queue_item("2026-11-23-mon-post", "post", "09:30", True),
+                    _queue_item("2026-11-23-mon-story", "story", "16:30", False)])
     h = History([Entry(uid="2026-11-23-mon-story", date="2026-11-23", slot="mon-story", family="tip", surface="story",
                        subject="", reference="", layout="", photo="", category="", status="published",
                        platforms={"instagram": {"status": "published", "id": "111"}}),
@@ -150,25 +150,25 @@ def test_controle_separe_story_ig_post_ig_post_fb(monkeypatch):
     h.save()
     rows = run.channel_report(now=datetime(2026, 11, 23, 18, 0, tzinfo=TZ))
     assert [(r["canal"], r["ok"], r["id"]) for r in rows] == [
-        ("Story Instagram", True, "111"), ("Post Instagram", True, "222"), ("Post Facebook", False, "")]
+        ("Post Instagram", True, "222"), ("Post Facebook", False, ""), ("Story Instagram", True, "111")]
     with pytest.raises(SystemExit):
         monkeypatch.setattr(run, "channel_report", lambda **k: rows)
         run.cmd_check(SimpleNamespace(grace=45))
 
 
 def test_controle_attend_le_delai_de_grace():
-    run.save_queue([_queue_item("2026-11-23-mon-post", "post", "16:30", True)])
+    run.save_queue([_queue_item("2026-11-23-mon-post", "post", "09:30", True)])
     History([]).save()
-    assert run.channel_report(now=datetime(2026, 11, 23, 17, 0, tzinfo=TZ)) == []
-    assert len(run.channel_report(now=datetime(2026, 11, 23, 17, 20, tzinfo=TZ))) == 2
+    assert run.channel_report(now=datetime(2026, 11, 23, 10, 0, tzinfo=TZ)) == []
+    assert len(run.channel_report(now=datetime(2026, 11, 23, 10, 20, tzinfo=TZ))) == 2
 
 
 def test_un_identifiant_sans_statut_publie_nest_pas_une_preuve():
-    run.save_queue([_queue_item("2026-11-23-mon-story", "story", "09:30", False)])
+    run.save_queue([_queue_item("2026-11-23-mon-story", "story", "16:30", False)])
     History([Entry(uid="2026-11-23-mon-story", date="2026-11-23", slot="mon-story", family="tip", surface="story",
                    subject="", reference="", layout="", photo="", category="", status="uncertain",
                    platforms={"instagram": {"status": "uncertain", "id": "999"}})]).save()
-    assert run.channel_report(now=datetime(2026, 11, 23, 12, 0, tzinfo=TZ))[0]["ok"] is False
+    assert run.channel_report(now=datetime(2026, 11, 23, 18, 0, tzinfo=TZ))[0]["ok"] is False
 
 
 # ------------------------------------------------------------ rattrapage ----
@@ -185,7 +185,7 @@ def test_rattrapage_exige_la_phrase():
 
 def test_rattrapage_refuse_si_deja_publie_sur_ce_canal(monkeypatch):
     monkeypatch.setattr(run, "paris_today", lambda: date(2026, 11, 23))
-    q = _queue_item("2026-11-23-mon-post", "post", "16:30", True) | {"status": "partial"}
+    q = _queue_item("2026-11-23-mon-post", "post", "09:30", True) | {"status": "partial"}
     run.save_queue([q])
     History([Entry(uid=q["uid"], date=q["date"], slot="mon-post", family="product", surface="post", subject="",
                    reference="", layout="", photo="", category="", status="partial",
@@ -197,21 +197,21 @@ def test_rattrapage_refuse_si_deja_publie_sur_ce_canal(monkeypatch):
 
 def test_rattrapage_story_jamais_sur_facebook(monkeypatch):
     monkeypatch.setattr(run, "paris_today", lambda: date(2026, 11, 23))
-    run.save_queue([_queue_item("2026-11-23-mon-story", "story", "09:30", False) | {"status": "missed"}])
+    run.save_queue([_queue_item("2026-11-23-mon-story", "story", "16:30", False) | {"status": "missed"}])
     with pytest.raises(SystemExit, match="Facebook"):
         run.cmd_catchup(_catchup(uid="2026-11-23-mon-story", platform="facebook"))
 
 
 def test_rattrapage_refuse_au_dela_de_deux_jours(monkeypatch):
     monkeypatch.setattr(run, "paris_today", lambda: date(2026, 11, 27))
-    run.save_queue([_queue_item("2026-11-23-mon-post", "post", "16:30", True) | {"status": "missed"}])
+    run.save_queue([_queue_item("2026-11-23-mon-post", "post", "09:30", True) | {"status": "missed"}])
     with pytest.raises(SystemExit, match="2 jours"):
         run.cmd_catchup(_catchup())
 
 
 def test_rattrapage_refuse_si_publication_identique_visible_chez_meta(monkeypatch):
     monkeypatch.setattr(run, "paris_today", lambda: date(2026, 11, 23))
-    q = _queue_item("2026-11-23-mon-post", "post", "16:30", True) | {"status": "missed",
+    q = _queue_item("2026-11-23-mon-post", "post", "09:30", True) | {"status": "missed",
         "payload": {"caption_instagram": "Turbines raccord rapide KaVo\n\nLot de 5"}}
     run.save_queue([q])
     History([]).save()
@@ -236,3 +236,87 @@ def test_conseil_rendu_typographique_et_legende(tmp_path, products, articles, mo
         if surface == "post":
             assert t["title"] in it.payload["caption_instagram"] and "#conseildentaire" in it.payload["caption_instagram"]
             assert it.payload["caption_facebook"].startswith(t["title"])
+
+
+# ------------------------------------------ samedis, dimanches, changements d'heure ----
+from datetime import timezone
+
+JOURS_CRITIQUES = [
+    ("2026-11-28", "samedi"), ("2026-11-29", "dimanche"),
+    ("2027-03-28", "dimanche passage à l'heure d'été"), ("2027-10-31", "dimanche retour à l'heure d'hiver"),
+]
+
+
+def _freeze(monkeypatch, moment):
+    class FrozenDT(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return moment.astimezone(tz) if tz else moment.replace(tzinfo=None)
+    monkeypatch.setattr(run, "datetime", FrozenDT)
+
+
+@pytest.mark.parametrize("jour,label", JOURS_CRITIQUES)
+@pytest.mark.parametrize("heure,surface", [("09:30", "post"), ("16:30", "story")])
+def test_programmation_github_couvre_le_creneau_ce_jour_la(jour, label, heure, surface):
+    wf = (ROOT / ".github/workflows/due.yml").read_text()
+    expr = re.search(r'cron: "([^"]+)"', wf).group(1)
+    assert expr.split()[2:] == ["*", "*", "*"]                     # tous les jours du mois, tous les mois, tous les jours
+    h, m = map(int, heure.split(":"))
+    slot_utc = datetime.fromisoformat(jour).replace(hour=h, minute=m, tzinfo=TZ).astimezone(timezone.utc)
+    mins = slot_utc.hour * 60 + slot_utc.minute
+    assert any(0 <= hh * 60 + mm - mins < 30 for hh, mm in _cron_runs(expr)), (label, slot_utc)
+
+
+@pytest.mark.parametrize("jour,label", JOURS_CRITIQUES)
+def test_heure_de_paris_juste_les_jours_de_changement(jour, label):
+    it = planner.PlanItem(uid="u", date=jour, time="09:30", slot="s", family="tip", surface="post", facebook=True)
+    utc = it.scheduled_at().astimezone(timezone.utc)
+    attendu = {"2026-11-28": 8, "2026-11-29": 8, "2027-03-28": 7, "2027-10-31": 8}[jour]   # 09:30 Paris en UTC
+    assert (utc.hour, utc.minute) == (attendu, 30)
+
+
+@pytest.mark.parametrize("jour,label", JOURS_CRITIQUES)
+@pytest.mark.parametrize("heure,surface,facebook", [("09:30", "post", True), ("16:30", "story", False)])
+def test_publication_envoyee_le_week_end_et_aux_changements_d_heure(tmp_path, monkeypatch, jour, label, heure, surface, facebook):
+    from test_golive import _setup
+    h, m = map(int, heure.split(":"))
+    slot = datetime.fromisoformat(jour).replace(hour=h, minute=m, tzinfo=TZ)
+    pub = _setup(tmp_path, monkeypatch, scheduled=slot, activated=slot - timedelta(days=3))
+    q = run.load_queue()[0]
+    q.update(surface=surface, facebook=facebook)
+    run.save_queue([q])
+    _freeze(monkeypatch, slot + timedelta(minutes=7))
+    run.main(["due", "--mode", "auto"])
+    assert pub == ["u1"], label
+
+
+@pytest.mark.parametrize("jour,label", JOURS_CRITIQUES)
+def test_creneau_manque_le_week_end_rend_l_execution_rouge(tmp_path, monkeypatch, jour, label):
+    from test_golive import _setup
+    slot = datetime.fromisoformat(jour).replace(hour=9, minute=30, tzinfo=TZ)
+    pub = _setup(tmp_path, monkeypatch, scheduled=slot, activated=slot - timedelta(days=3))
+    _freeze(monkeypatch, slot + timedelta(minutes=95))
+    with pytest.raises(SystemExit):
+        run.main(["due", "--mode", "auto"])
+    assert pub == [] and run.load_queue()[0]["status"] == "missed"
+
+
+def test_un_an_sans_epuisement_ni_doublon_rapproche(products, articles):
+    """52 semaines : 5 familles différentes chaque semaine ; un visuel identique (produit + lot + support +
+    variante) ne revient jamais avant cooldown_days.same_visual jours."""
+    items = [i for i in plan(products, articles, weeks=52) if i.family == "product"]
+    for w in range(52):
+        week = [i for i in items if (date.fromisoformat(i.date) - START).days // 7 == w]
+        assert len(week) == 5 and len({fam(products, i) for i in week}) == 5, w
+    last, gap = {}, SETTINGS["cooldown_days"]["same_visual"]
+    for i in items:
+        k = (i.reference, i.surface, i.layout)
+        if k in last:
+            assert (date.fromisoformat(i.date) - last[k]).days >= gap
+        last[k] = date.fromisoformat(i.date)
+
+
+def test_chaque_famille_passe_en_post_et_en_story(products, articles):
+    items = [i for i in plan(products, articles, weeks=10) if i.family == "product"]
+    for f in SETTINGS["product_families"]:
+        assert {i.surface for i in items if fam(products, i) == f} == {"post", "story"}, f

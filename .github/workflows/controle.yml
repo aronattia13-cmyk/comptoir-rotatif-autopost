@@ -1,5 +1,5 @@
 # Contrôle indépendant des publications du jour, canal par canal :
-# Story Instagram (09:30), Post Instagram et Post Facebook (16:30), heure de Paris.
+# Post Instagram et Post Facebook (09:30), Story Instagram (16:30), heure de Paris.
 # Chaque publication doit avoir un identifiant Meta (relu chez Meta) et, si disponible, un lien.
 # Échec = exécution rouge + issue GitHub « publication manquée » (notification au propriétaire).
 # Déclenché par le déclencheur externe (docs/declenchement-externe.md) et, en secours, par GitHub.

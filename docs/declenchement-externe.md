@@ -6,6 +6,16 @@ du 16 au 20 novembre 2026, sur 24 exécutions prévues par jour, GitHub n'en a l
 (3 seulement le 20/11, d'où la publication manquée de 12:30). Un déclencheur externe appelle
 directement l'API GitHub à heure fixe ; la programmation GitHub reste active en secours.
 
+## Ce qui est indépendant, ce qui ne l'est pas
+Le déclencheur externe remplace le **planificateur** de GitHub (la partie défaillante) : c'est lui qui décide de l'heure.
+L'exécution elle-même (rendu, contrôles, envoi à Meta) reste sur les machines GitHub Actions, qui, elles,
+démarrent immédiatement sur demande (vérifié le 20/11 : exécution lancée à la seconde après un envoi de code).
+
+## Authentification
+Jeton GitHub « fine-grained » limité à ce seul dépôt et à la seule permission « Actions : lecture/écriture » :
+il ne peut que lancer des workflows existants, ni lire les secrets, ni modifier le code. Il est stocké
+uniquement chez le déclencheur (cron-job.org ou secret Cloudflare), révocable à tout moment, expiration 1 an.
+
 ## Sans risque de doublon
 - Toutes les exécutions passent par le même groupe de concurrence (`comptoir-state`) : jamais deux en parallèle.
 - Chaque canal (Story Instagram, Post Instagram, Post Facebook) n'est publié que s'il n'est pas déjà
@@ -20,8 +30,8 @@ directement l'API GitHub à heure fixe ; la programmation GitHub reste active en
 
 | Tâche | Heures | Workflow (`<fichier>`) |
 |---|---|---|
-| Publication story | 09:31 et 09:50 | `due.yml` |
-| Publication post | 16:31 et 16:50 | `due.yml` |
+| Post Instagram + Facebook | 09:31 et 09:50 | `due.yml` |
+| Story Instagram | 16:31 et 16:50 | `due.yml` |
 | Contrôle par canal | 10:20 et 17:20 | `controle.yml` |
 | Planification | 20:20 | `weekly.yml` |
 

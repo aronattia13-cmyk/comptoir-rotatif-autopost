@@ -222,9 +222,13 @@ class Planner:
                 out.append(date.fromisoformat(e.date))
         return out
 
-    def visual_used(self, handle: str, surface: str, layout: str) -> bool:
+    def visual_used(self, handle: str, surface: str, layout: str, today: date | None = None) -> bool:
+        """Même produit + lot + support + visuel déjà utilisé dans les cooldown_days.same_visual derniers jours
+        (doublon exact refusé ; retour possible seulement après ce délai, pour durer des années)."""
+        days = self.cd.get("same_visual", 10_000)
         return any(e.family == "product" and e.reference == handle and e.surface == surface
-                   and e.layout == layout and e.status not in ("missed", "skipped") for e in self.h.entries)
+                   and e.layout == layout and e.status not in ("missed", "skipped")
+                   and (today is None or (today - date.fromisoformat(e.date)).days < days) for e in self.h.entries)
 
     def pick_product_rotation(self, today: date, surface: str):
         """Famille la moins récente, jamais la même que la veille ou le jour même ;
@@ -236,14 +240,38 @@ class Planner:
         for fam in self.families:
             if any(d in (today, today - timedelta(days=1)) for d in self._family_days(fam, today)):
                 blocked.add(fam)
-        fams = sorted([f for f in self.families if f not in blocked],
-                      key=lambda f: (max(self._family_days(f, today), default=date(2000, 1, 1)), list(self.families).index(f)))
+        def last_surface(f):
+            es = [e for e in self.h.entries if e.family == "product" and e.status not in ("missed", "skipped")
+                  and e.reference in {p.handle for p in self.all_products if product_family(p, self.families) == f}]
+            return max(es, key=lambda e: e.date).surface if es else None
+
+        def key(f):
+            last = max(self._family_days(f, today), default=date(2000, 1, 1))
+            # Alterner posts et stories pour chaque famille (Facebook voit toutes les familles) :
+            # une famille vue en dernier sur ce même support passe après, à ancienneté proche.
+            if last_surface(f) == surface:
+                last += timedelta(days=self.s.get("same_surface_penalty_days", 4))
+            return (last, list(self.families).index(f))
+        fams = sorted([f for f in self.families if f not in blocked], key=key)
+        # Rotation décalée d'un cran chaque semaine : chaque famille passe par tous les créneaux
+        # produits (posts et stories, jours différents). Préférence seulement : si la famille
+        # prévue est bloquée (veille / même jour) ou sans visuel inédit, la plus ancienne prend le relais.
+        slots = sorted([(x["weekday"], x["time"]) for x in self.s["weekly_slots"] if x["family"] == "product"])
+        me = next((k for k, (wd, _) in enumerate(slots) if wd == today.weekday()
+                   and [x for x in self.s["weekly_slots"] if x["weekday"] == wd and x["family"] == "product"
+                        and x["surface"] == surface]), None)
+        if me is not None and self.families:
+            week = (today - date(2024, 1, 1)).days // 7          # 2024-01-01 est un lundi
+            pref = list(self.families)[(me + week) % len(self.families)]
+            if pref in fams:
+                fams.remove(pref)
+                fams.insert(0, pref)
         for fam in fams:
             cands = []
             for p in self.products:
                 if product_family(p, self.families) != fam:
                     continue
-                free = [l for l in order if not self.visual_used(p.handle, surface, l)]
+                free = [l for l in order if not self.visual_used(p.handle, surface, l, today)]
                 if free:
                     cands.append((self.h.last_date(reference=p.handle) or date(2000, 1, 1), p.handle, p, free[0]))
             if cands:
