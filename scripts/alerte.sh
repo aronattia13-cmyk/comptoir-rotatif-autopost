@@ -5,7 +5,7 @@ day=$(TZ=Europe/Paris date +%F)
 title="AutoPost : publication manquée ou en échec le $day"
 body="Exécution : ${GITHUB_SERVER_URL:-}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}
 
-$(cat data/alerte.txt 2>/dev/null || echo 'Voir le résumé de l exécution et data/log.jsonl.')
+$(cat "${ALERT_FILE:-/tmp/autopost-alerte.txt}" 2>/dev/null || echo 'Voir le résumé de l exécution et data/log.jsonl.')
 
 Rattrapage sans doublon : workflow « Rattrapage d'une publication » (un canal à la fois)."
 num=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' 2>/dev/null)

@@ -520,7 +520,7 @@ def cmd_check(args):
         with open(out, "a") as fh:
             fh.write("### Contrôle des publications du jour\n\n" + "\n".join(f"- {l}" for l in lines) + "\n")
     if missing:
-        Path(ROOT / "data" / "alerte.txt").write_text("\n".join(l for l in lines if l.startswith("MANQUANT")) + "\n")
+        Path(os.environ.get("ALERT_FILE", "/tmp/autopost-alerte.txt")).write_text("\n".join(l for l in lines if l.startswith("MANQUANT")) + "\n")
         sys.exit(f"{len(missing)} publication(s) manquante(s) aujourd'hui : voir le résumé de l'exécution")
 
 
