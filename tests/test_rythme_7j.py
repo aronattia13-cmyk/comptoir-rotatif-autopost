@@ -1,5 +1,5 @@
 """Rythme 7 j/7 : post Instagram + Facebook 09:30, Story Instagram 16:30 (Europe/Paris),
-~5 publicités produits par semaine, contrôles par canal, rattrapage sans doublon."""
+répartition 65 % produits / 15 % conseils / 10 % blog / 10 % gravure, contrôles par canal, rattrapage sans doublon."""
 import json
 import re
 from collections import Counter
@@ -37,8 +37,17 @@ def tips(validated=True):
     return [dict(t, validated=validated) for t in json.loads((ROOT / "data/content/tips.json").read_text())["tips"]]
 
 
+def services(validated=True):
+    d = json.loads((ROOT / "data/content/services.json").read_text())
+    for m in d["gravure"]["messages"]:
+        m["validated"] = validated or m.get("validated", True)
+    return d
+
+
 def plan(products, articles, weeks=4, history=None, **kw):
     kw.setdefault("tips", tips())
+    kw.setdefault("services", services())
+    kw.setdefault("service_photos", [])
     return planner.simulate(products, articles, history or History([]), START, weeks, settings=SETTINGS, **kw)
 
 
@@ -57,34 +66,44 @@ def test_quatorze_creneaux_par_semaine_week_end_compris(products, articles):
         assert (story.time, story.surface, story.facebook) == ("16:30", "story", False)
 
 
-def test_cinq_publicites_produits_par_semaine_toutes_familles(products, articles):
-    items = plan(products, articles, weeks=4)
+def test_repartition_65_15_10_10(products, articles):
+    items = plan(products, articles, weeks=8)
     assert all(i.status == "planned" for i in items)
-    for w in range(4):
+    share = {f: sum(i.family == f for i in items) / len(items) for f in ("product", "tip", "blog", "service")}
+    assert 0.60 <= share["product"] <= 0.70, share
+    assert 0.10 <= share["tip"] <= 0.20, share
+    assert share["blog"] <= 0.12 and share["service"] <= 0.15, share
+    for w in range(8):                                             # toutes les familles de produits chaque semaine
         week = [i for i in items if i.family == "product" and (date.fromisoformat(i.date) - START).days // 7 == w]
-        assert len(week) == 5
-        assert len({fam(products, i) for i in week}) == 5          # turbines, Satelec, EMS, CA bleu, CA rouge
+        assert len(week) >= 8 and len({fam(products, i) for i in week}) == 5
+
+
+def test_plus_de_limite_a_cinq_publicites_par_semaine(products, articles):
+    items = plan(products, articles, weeks=2)
+    assert sum(i.family == "product" for i in items) >= 16      # ~9 par semaine (65 % de 14)
 
 
 def test_jamais_la_meme_famille_deux_jours_de_suite(products, articles):
     prods = [i for i in plan(products, articles, weeks=6) if i.family == "product"]
-    for a, b in zip(prods, prods[1:]):
-        if (date.fromisoformat(b.date) - date.fromisoformat(a.date)).days <= 1:
-            assert fam(products, a) != fam(products, b), (a.uid, b.uid)
+    for a in prods:
+        for b in prods:
+            if a.uid < b.uid and 0 <= (date.fromisoformat(b.date) - date.fromisoformat(a.date)).days <= 1:
+                assert fam(products, a) != fam(products, b), (a.uid, b.uid)
 
 
 def test_jamais_deux_fois_le_meme_produit_lot_support_visuel(products, articles):
-    prods = [i for i in plan(products, articles, weeks=8) if i.family == "product"]   # 8 semaines < délai de retour
+    gap = SETTINGS["cooldown_days"]["same_visual"]
+    prods = [i for i in plan(products, articles, weeks=gap // 7) if i.family == "product"]
     keys = Counter((i.reference, i.surface, i.layout) for i in prods)
     assert max(keys.values()) == 1
 
 
 def test_historique_compte_pour_les_visuels(products, articles):
     first = [i for i in plan(products, articles, weeks=1) if i.family == "product"][0]
-    h = History([Entry(uid="x", date="2026-11-01", slot="old", family="product", surface=first.surface,
-                       subject="s", reference=first.reference, layout=first.layout, photo="", category=first.category,
-                       status="published")])
-    again = [i for i in plan(products, articles, weeks=6, history=h) if i.family == "product"]
+    h = History([Entry(uid="x", date=(START - timedelta(days=2)).isoformat(), slot="old", family="product",
+                       surface=first.surface, subject="s", reference=first.reference, layout=first.layout, photo="",
+                       category=first.category, status="published")])
+    again = [i for i in plan(products, articles, weeks=5, history=h) if i.family == "product"]
     assert (first.reference, first.surface, first.layout) not in {(i.reference, i.surface, i.layout) for i in again}
 
 
@@ -95,10 +114,11 @@ def test_prix_et_lot_viennent_de_shopify(products, articles):
             assert (i.price, i.lot_size) == (str(p.price), p.lot_size)
 
 
-def test_conseils_non_valides_jamais_publies(products, articles):
-    items = plan(products, articles, weeks=1, tips=tips(validated=False))
+def test_conseils_et_gravures_non_valides_jamais_publies(products, articles):
+    items = plan(products, articles, weeks=2, tips=tips(validated=False), services=services(validated=False))
     assert not any(i.family == "tip" and i.status == "planned" for i in items)
-    assert any(i.status == "skipped" for i in items)           # signalé (planification rouge), jamais comblé par une répétition
+    drafts = {m["id"] for m in services(validated=False)["gravure"]["messages"] if m.get("validated") is False}
+    assert not any(i.family == "service" and i.subject in drafts for i in items)
 
 
 def test_ancien_calendrier_retire_sans_toucher_au_publie(tmp_path):
@@ -302,14 +322,17 @@ def test_creneau_manque_le_week_end_rend_l_execution_rouge(tmp_path, monkeypatch
 
 
 def test_un_an_sans_epuisement_ni_doublon_rapproche(products, articles):
-    """52 semaines : 5 familles différentes chaque semaine ; un visuel identique (produit + lot + support +
-    variante) ne revient jamais avant cooldown_days.same_visual jours."""
-    items = [i for i in plan(products, articles, weeks=52) if i.family == "product"]
+    """52 semaines : les 5 familles chaque semaine, ~65 % de produits, jamais la même famille le même jour
+    ou le lendemain, un visuel identique jamais avant cooldown_days.same_visual jours."""
+    items = plan(products, articles, weeks=52)
+    assert all(i.status == "planned" for i in items)
+    prods = [i for i in items if i.family == "product"]
+    assert 0.60 <= len(prods) / len(items) <= 0.72
     for w in range(52):
-        week = [i for i in items if (date.fromisoformat(i.date) - START).days // 7 == w]
-        assert len(week) == 5 and len({fam(products, i) for i in week}) == 5, w
+        week = [i for i in prods if (date.fromisoformat(i.date) - START).days // 7 == w]
+        assert len({fam(products, i) for i in week}) == 5, w
     last, gap = {}, SETTINGS["cooldown_days"]["same_visual"]
-    for i in items:
+    for i in prods:
         k = (i.reference, i.surface, i.layout)
         if k in last:
             assert (date.fromisoformat(i.date) - last[k]).days >= gap
@@ -380,3 +403,13 @@ def test_post_absent_chez_meta_envoye_une_fois_par_reseau(monkeypatch):
     meta2 = _FakeMeta()
     publisher.publish_item(_post_item(), meta2, "https://x.github.io/r", done={"instagram": 1, "facebook": 1})
     assert meta2.sent == []                                   # canal déjà publié : rien n'est renvoyé
+
+
+def test_jamais_deux_contenus_non_produits_du_meme_type_le_meme_jour(products, articles):
+    items = plan(products, articles, weeks=8)
+    by_day = {}
+    for i in items:
+        by_day.setdefault(i.date, []).append(i.family)
+    for d, fams in by_day.items():
+        others = [f for f in fams if f != "product"]
+        assert len(others) == len(set(others)), (d, fams)

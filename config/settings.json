@@ -5,7 +5,7 @@
     {
       "weekday": 0,
       "slot": "mon-post",
-      "family": "product",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -13,7 +13,7 @@
     {
       "weekday": 0,
       "slot": "mon-story",
-      "family": "tip",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -21,7 +21,7 @@
     {
       "weekday": 1,
       "slot": "tue-post",
-      "family": "tip",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -29,7 +29,7 @@
     {
       "weekday": 1,
       "slot": "tue-story",
-      "family": "product",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -37,7 +37,7 @@
     {
       "weekday": 2,
       "slot": "wed-post",
-      "family": "blog",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -45,7 +45,7 @@
     {
       "weekday": 2,
       "slot": "wed-story",
-      "family": "tip",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -53,7 +53,7 @@
     {
       "weekday": 3,
       "slot": "thu-post",
-      "family": "product",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -61,7 +61,7 @@
     {
       "weekday": 3,
       "slot": "thu-story",
-      "family": "service",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -69,7 +69,7 @@
     {
       "weekday": 4,
       "slot": "fri-post",
-      "family": "tip",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -77,7 +77,7 @@
     {
       "weekday": 4,
       "slot": "fri-story",
-      "family": "product",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -85,7 +85,7 @@
     {
       "weekday": 5,
       "slot": "sat-post",
-      "family": "product",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -93,7 +93,7 @@
     {
       "weekday": 5,
       "slot": "sat-story",
-      "family": "tip",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -101,7 +101,7 @@
     {
       "weekday": 6,
       "slot": "sun-post",
-      "family": "tip",
+      "family": "auto",
       "surface": "post",
       "time": "09:30",
       "facebook": true
@@ -109,7 +109,7 @@
     {
       "weekday": 6,
       "slot": "sun-story",
-      "family": "tip",
+      "family": "auto",
       "surface": "story",
       "time": "16:30",
       "facebook": false
@@ -118,11 +118,11 @@
   "cooldown_days": {
     "same_product": 42,
     "same_model": 21,
-    "same_article": 90,
+    "same_article": 30,
     "same_service_message": 28,
     "same_service_photo": 21,
     "same_tip": 28,
-    "same_visual": 63
+    "same_visual": 38
   },
   "avoid_last_layouts": 2,
   "post_format": "portrait",
@@ -162,5 +162,12 @@
       "rouge"
     ]
   },
-  "_rythme": "7 j/7 (Europe/Paris, heure d'été/hiver incluse) : 09:30 post Instagram + Facebook ; 16:30 Story Instagram. ~5 publicités produits/semaine (posts lun, jeu, sam ; stories mar, ven). Jamais la même famille deux jours de suite ; jamais deux fois le même produit+lot+support+visuel."
+  "_rythme": "7 j/7 (Europe/Paris, été/hiver) : 09:30 post Instagram + Facebook ; 16:30 Story Instagram. Répartition cible sur l'ensemble des contenus : 65 % produits, 15 % organisation/équipement (conseils), 10 % articles du blog, 10 % gravure. Jamais la même famille de produits deux jours de suite ; même produit+lot+support+visuel au plus tôt après cooldown_days.same_visual jours.",
+  "content_mix": {
+    "product": 0.65,
+    "tip": 0.15,
+    "blog": 0.1,
+    "service": 0.1
+  },
+  "content_mix_window": 28
 }

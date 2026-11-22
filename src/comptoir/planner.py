@@ -195,8 +195,8 @@ class Planner:
         for sid, svc in self.services.items():
             if not svc.get("enabled"):
                 continue
-            msgs = [m for m in svc["messages"]
-                    if self._days(today, subject=m["id"]) >= self.cd["same_service_message"]]
+            msgs = [m for m in svc["messages"] if m.get("validated", True)
+                    and self._days(today, subject=m["id"]) >= self.cd["same_service_message"]]
             if not msgs:
                 continue
             msg = max(msgs, key=lambda m: (self._days(today, subject=m["id"]), -svc["messages"].index(m)))
@@ -331,9 +331,24 @@ class Planner:
     FALLBACKS = {"product": ["product", "tip", "blog", "service"], "blog": ["blog", "tip", "service"],
                  "tip": ["tip", "blog", "service"], "service": ["service", "tip", "blog"]}
 
+    def _share_order(self, day: date) -> list[str]:
+        """Répartition cible (settings 'content_mix', ex. produit 65 %, conseil 15 %, blog 10 %, gravure 10 %) :
+        famille la plus en retard sur sa part, calculée sur les derniers créneaux planifiés ou publiés."""
+        mix = self.s["content_mix"]
+        window = self.s.get("content_mix_window", 28)
+        recent = [e.family for e in sorted(self.h.entries, key=lambda e: (e.date, e.slot))
+                  if e.status not in ("missed", "skipped") and e.date <= day.isoformat()][-window:]
+        n = len(recent) + 1
+        return sorted(mix, key=lambda f: (-(mix[f] * n - recent.count(f)), -mix[f]))
+
     def fill_rotation(self, item: PlanItem, day: date):
         """Remplit un créneau du rythme 7 j/7, avec repli sans répétition ; sinon créneau vide (signalé)."""
-        for fam in self.FALLBACKS.get(item.family, [item.family]):
+        order = self._share_order(day) if item.family == "auto" else self.FALLBACKS.get(item.family, [item.family])
+        same_day = {e.family for e in self.h.entries if e.date == day.isoformat() and e.status not in ("missed", "skipped")}
+        if item.family == "auto":                 # pas deux conseils / gravures / articles le même jour
+            order = [f for f in order if f == "product" or f not in same_day] + \
+                    [f for f in order if f != "product" and f in same_day]
+        for fam in order:
             if fam == "product":
                 r = self.pick_product_rotation(day, item.surface)
                 if r:
