@@ -71,8 +71,12 @@ def cmd_weekly(args):
 
     history = History.load()
     start = paris_today() + timedelta(days=1)
+    removed = drop_obsolete_slots(history, start)
+    if removed:
+        log("créneaux de l'ancien calendrier retirés (jamais publiés)", uids=removed)
     items = planner.Planner(products, articles, history).plan(start, args.days)
-    queue = [q for q in load_queue() if q["status"] in ("planned",) and q["date"] >= paris_today().isoformat()]
+    queue = [q for q in load_queue() if q["status"] in ("planned",) and q["date"] >= paris_today().isoformat()
+             and q["uid"] not in removed]
     for it in items:
         try:
             build.build_item(it, products, articles)
@@ -88,6 +92,25 @@ def cmd_weekly(args):
     save_queue(queue)
     write_dashboard(products, articles, history, queue)
     write_bio_page(articles, products, queue)
+    empty = [it.uid for it in items if it.status != "planned"]
+    if empty:
+        # Alerte dès la planification (exécution rouge + e-mail) : un créneau vide se corrige avant le jour J.
+        sys.exit(f"{len(empty)} créneau(x) sans contenu cette semaine : {', '.join(empty)} (voir le tableau de contrôle)")
+
+
+def drop_obsolete_slots(history: History, start: date) -> list[str]:
+    """Retire de la file et de l'historique les créneaux FUTURS encore « planned » dont le nom
+    n'existe plus dans config/settings.json (changement de calendrier). Rien de publié n'est touché."""
+    valid = {s["slot"] for s in _settings()["weekly_slots"]}
+    queue = load_queue()
+    gone = [q["uid"] for q in queue if q["status"] == "planned" and q["date"] >= start.isoformat()
+            and q["slot"] not in valid]
+    gone += [e.uid for e in history.entries if e.status == "planned" and e.date >= start.isoformat()
+             and e.slot not in valid and e.uid not in gone]
+    if gone:
+        save_queue([q for q in queue if q["uid"] not in gone])
+        history.entries[:] = [e for e in history.entries if e.uid not in gone]
+    return gone
 
 
 def cmd_due(args):
@@ -434,6 +457,122 @@ def cmd_publish_test(args):
     save_queue(queue)
 
 
+
+# --------------------------------------------------------------------- #
+# Contrôle séparé par canal : Story Instagram, Post Instagram, Post Facebook
+CHANNELS = {"story": [("instagram", "Story Instagram")], "post": [("instagram", "Post Instagram"), ("facebook", "Post Facebook")]}
+
+
+def expected_channels(q: dict) -> list[tuple[str, str]]:
+    chans = CHANNELS.get(q["surface"], [])
+    if q["surface"] == "post" and not q.get("facebook"):
+        chans = chans[:1]
+    return chans
+
+
+def channel_report(now: datetime | None = None, grace_min: int = 45, client=None) -> list[dict]:
+    """Pour chaque créneau d'aujourd'hui dont l'heure + délai de grâce est passée, et pour chaque
+    canal attendu : preuve de publication (identifiant Meta + lien) ou MANQUANT.
+    Avec un client Meta, l'identifiant est relu chez Meta (preuve indépendante de notre fichier)."""
+    now = now or datetime.now(TZ)
+    history = History.load()
+    rows = []
+    for q in load_queue():
+        if q["date"] != now.date().isoformat():
+            continue
+        it = planner.PlanItem(**{k: q[k] for k in planner.PlanItem.__dataclass_fields__ if k in q})
+        if now < it.scheduled_at() + timedelta(minutes=grace_min):
+            continue
+        e = history.get(q["uid"])
+        plats = e.platforms if e else {}
+        for key, label in expected_channels(q):
+            v = plats.get(key, {})
+            ok = v.get("status") == "published" and bool(v.get("id"))
+            link = v.get("permalink", "")
+            if ok and client is not None:
+                try:
+                    link = (client.ig_permalink(v["id"]) if key == "instagram" else client.fb_permalink(v["id"])) or link
+                    confirmed = "confirmé par Meta" if link or q["surface"] == "story" else "identifiant non relu"
+                except Exception as exc:                    # never fail open: report it
+                    confirmed = f"relecture Meta impossible ({type(exc).__name__})"
+            else:
+                confirmed = ""
+            rows.append({"uid": q["uid"], "heure": q["time"], "canal": label, "ok": ok,
+                         "statut": v.get("status") or q.get("status"), "id": v.get("id", ""), "lien": link,
+                         "verification": confirmed, "raison": v.get("error") or q.get("reason", "")})
+    return rows
+
+
+def cmd_check(args):
+    client = None
+    if os.environ.get("META_SYSTEM_USER_TOKEN"):
+        try:
+            client = _client()
+        except SystemExit:
+            client = None
+    rows = channel_report(grace_min=args.grace, client=client)
+    missing = [r for r in rows if not r["ok"]]
+    lines = [f"{'OK ' if r['ok'] else 'MANQUANT'} {r['heure']} {r['canal']:<16} {r['uid']}  id={r['id'] or '-'}  {r['lien'] or ''} {r['verification']} {r['raison']}".rstrip()
+             for r in rows] or ["Aucun créneau échu à contrôler pour l'instant."]
+    print("\n".join(lines))
+    out = os.environ.get("GITHUB_STEP_SUMMARY")
+    if out:
+        with open(out, "a") as fh:
+            fh.write("### Contrôle des publications du jour\n\n" + "\n".join(f"- {l}" for l in lines) + "\n")
+    if missing:
+        Path(ROOT / "data" / "alerte.txt").write_text("\n".join(l for l in lines if l.startswith("MANQUANT")) + "\n")
+        sys.exit(f"{len(missing)} publication(s) manquante(s) aujourd'hui : voir le résumé de l'exécution")
+
+
+# --------------------------------------------------------------------- #
+CATCHUP_PHRASE = "JE CONFIRME LE RATTRAPAGE"
+
+
+def cmd_catchup(args):
+    """Rattrapage manuel d'UN canal d'UN créneau manqué ou en échec, sans doublon :
+    refus si déjà publié / incertain sur ce canal, si plus de 2 jours, ou si un post
+    identique est déjà visible chez Meta."""
+    if args.confirm != CATCHUP_PHRASE:
+        sys.exit(f"Refus : phrase de confirmation attendue « {CATCHUP_PHRASE} ».")
+    queue, history = load_queue(), History.load()
+    q = next((x for x in queue if x["uid"] == args.uid), None)
+    if q is None:
+        sys.exit("Rattrapage refusé : créneau absent de la file.")
+    if q["status"] not in ("missed", "failed", "partial", "planned"):
+        sys.exit(f"Rattrapage refusé : statut « {q['status']} ».")
+    if args.platform == "facebook" and not (q["surface"] == "post" and q.get("facebook")):
+        sys.exit("Rattrapage refusé : ce créneau n'est pas prévu sur Facebook.")
+    if date.fromisoformat(q["date"]) < paris_today() - timedelta(days=2):
+        sys.exit("Rattrapage refusé : créneau de plus de 2 jours.")
+    e = history.get(q["uid"])
+    v = (e.platforms if e else {}).get(args.platform, {})
+    if v.get("status") in ("published", "uncertain"):
+        sys.exit(f"Rattrapage refusé : déjà {v.get('status')} sur {args.platform} (id {v.get('id', '-')}).")
+    client = _client()
+    first = (q["payload"].get(f"caption_{args.platform}") or q.get("title", "")).splitlines()[0].strip()
+    if first and q["surface"] == "post":
+        recent = client.ig_recent_media(25) if args.platform == "instagram" else client.fb_recent_posts(25)
+        txt = "caption" if args.platform == "instagram" else "message"
+        if any(first in (m.get(txt) or "") for m in recent):
+            sys.exit("Rattrapage refusé : une publication identique est déjà visible chez Meta.")
+    prev = q["status"]
+    q["status"] = "planned"
+    errors = checks.check_item(planner.PlanItem(**q), catalog.load_catalog())
+    if errors:
+        q["status"] = prev
+        save_queue(queue)
+        sys.exit("Contrôles bloquants : " + "; ".join(errors))
+    if e and e.status == "missed":
+        e.status = "planned"
+    log("RATTRAPAGE demandé", uid=q["uid"], platform=args.platform)
+    _publish_one(q, e, client=client, only=args.platform)
+    r = (e.platforms if e else {}).get(args.platform, {})
+    print(f"RÉSULTAT {args.platform}: {r.get('status')} id={r.get('id', '-')} {r.get('permalink', '')}")
+    history.save()
+    save_queue(queue)
+    if r.get("status") != "published":
+        sys.exit("Rattrapage non confirmé : voir data/log.jsonl")
+
 # --------------------------------------------------------------------- #
 def write_dashboard(products, articles, history: History, queue):
     upcoming = [q for q in queue if q["status"] == "planned"]
@@ -525,6 +664,12 @@ def main(argv=None):
     sub.add_parser("refresh")
     c = sub.add_parser("meta-check")
     c.add_argument("--container-test", action="store_true")
+    k = sub.add_parser("check")
+    k.add_argument("--grace", type=int, default=45)
+    r = sub.add_parser("catchup")
+    r.add_argument("--uid", required=True)
+    r.add_argument("--platform", choices=["instagram", "facebook"], required=True)
+    r.add_argument("--confirm", default="")
     t = sub.add_parser("publish-test")
     t.add_argument("--confirm", default="")
     t.add_argument("--uid", default="")
@@ -533,7 +678,7 @@ def main(argv=None):
     t.add_argument("--recover-failed", action="store_true")
     args = ap.parse_args(argv)
     {"weekly": cmd_weekly, "due": cmd_due, "meta-check": cmd_meta_check, "rebuild": cmd_rebuild, "refresh": cmd_refresh,
-     "publish-test": cmd_publish_test}[args.cmd](args)
+     "publish-test": cmd_publish_test, "check": cmd_check, "catchup": cmd_catchup}[args.cmd](args)
 
 
 if __name__ == "__main__":

@@ -67,6 +67,14 @@ def build_item(item: PlanItem, products: list[Product], articles: list[Article],
         recent = a.published and (date.fromisoformat(item.date) - date.fromisoformat(a.published[:10])).days <= 30
         ig = captions.blog_caption(a, item.title, seed, "instagram", bool(recent))
         fb = captions.blog_caption(a, item.title, seed, "facebook", bool(recent))
+    elif item.family == "tip":
+        # Conseil / info : visuel typographique de la charte (aucune photo inventée).
+        cta = "lecomptoirdurotatif.com"
+        img = (design.service_story(item.title, item.body, item.layout, None, cta=cta) if story
+               else design.service_post(item.title, item.body, item.layout, None, cta=cta, kicker="Conseil"))
+        msg = {"title": item.title, "body": item.body}
+        ig = captions.tip_caption(msg, "instagram")
+        fb = captions.tip_caption(msg, "facebook")
     else:
         # Real engraving photo only if provided; otherwise purely typographic.
         shot = design.prepare(_open(item.photo_url), False) if item.photo_source == "service" else None

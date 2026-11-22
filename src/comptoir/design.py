@@ -394,7 +394,8 @@ def blog_story(title: str, shot: Shot | None) -> Image.Image:
 
 # ------------------------------------------------------------ engraving ----
 def service_post(title: str, body: str, variant: str = "a-gravure-blanc",
-                 shot: Shot | None = None, cta: str = "Renseignements · lien en bio") -> Image.Image:
+                 shot: Shot | None = None, cta: str = "Renseignements · lien en bio",
+                 kicker: str = "Service") -> Image.Image:
     """Typographic by default. A real photo (assets/services/gravure/) is used
     only when provided — never a simulated engraving."""
     W, H = POST
@@ -403,7 +404,7 @@ def service_post(title: str, body: str, variant: str = "a-gravure-blanc",
     d = ImageDraw.Draw(img)
     lg = logo(170)
     img.paste(lg, (M, M), lg)
-    label(d, (W - M, M + lg.height // 2 + 7), "Service", 19, anchor="rs")
+    label(d, (W - M, M + lg.height // 2 + 7), kicker, 19, anchor="rs")
     base = H - M
     label(d, (M, base), cta, 19, fill=INK)
     f_b = sans(400, 30)

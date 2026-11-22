@@ -1,0 +1,47 @@
+# Rattrapage MANUEL d'un seul canal d'un créneau manqué ou en échec (moins de 2 jours).
+# Refusé si ce canal est déjà publié ou incertain, ou si une publication identique est déjà visible chez Meta.
+name: Rattrapage d'une publication
+on:
+  workflow_dispatch:
+    inputs:
+      uid:
+        description: "Identifiant du créneau (ex. 2026-11-23-mon-post), voir le tableau de contrôle ou l'issue d'alerte"
+        required: true
+      platform:
+        description: "Canal à rattraper (un seul à la fois)"
+        type: choice
+        options: [instagram, facebook]
+      confirm:
+        description: "Taper exactement : JE CONFIRME LE RATTRAPAGE"
+        required: true
+concurrency: { group: comptoir-state, cancel-in-progress: false }
+jobs:
+  catchup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with: { ref: main }
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt
+      - env:
+          PYTHONPATH: src
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_APP_ID: ${{ vars.META_APP_ID }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+          UID_: ${{ inputs.uid }}
+          PLATFORM: ${{ inputs.platform }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: python -m comptoir.run catchup --uid "$UID_" --platform "$PLATFORM" --confirm "$CONFIRM"
+      - if: always()
+        run: |
+          git config user.name "comptoir-bot"
+          git config user.email "comptoir-bot@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "Rattrapage $(date -u +%F-%H%M)"
+          git pull --rebase -q && git push

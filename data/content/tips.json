@@ -1,0 +1,221 @@
+{
+ "_doc": "Conseils et infos (famille 'tip' du rythme 7 j/7). Seuls les conseils \"validated\": true sont publiés. Brouillons rédigés par Claude le 22/11/2026 : à relire et valider par David (aucune donnée clinique chiffrée, aucune affirmation réglementaire). Délai avant réutilisation : cooldown_days.same_tip (28 jours).",
+ "tips": [
+  {
+   "id": "tip-bague-couleur",
+   "validated": false,
+   "title": "Bague bleue, bague rouge : que signifie la couleur ?",
+   "body": "La bague indique le rapport de transmission du contre-angle : bleue pour un rapport 1:1, rouge pour un multiplicateur (1:5 le plus souvent). Vérifiez-la avant chaque séance."
+  },
+  {
+   "id": "tip-turbine-vs-multiplicateur",
+   "validated": false,
+   "title": "Turbine ou contre-angle multiplicateur ?",
+   "body": "La turbine fonctionne à l'air, le multiplicateur se monte sur moteur électrique. Deux technologies, deux sensations : le choix dépend de l'équipement de votre unit et de vos habitudes."
+  },
+  {
+   "id": "tip-raccord-rapide",
+   "validated": false,
+   "title": "Raccord rapide : vérifiez la compatibilité",
+   "body": "Avant de commander une turbine, identifiez le raccord de votre unit (type KaVo MULTIflex, NSK, W&H…). Une turbine incompatible ne se branche tout simplement pas."
+  },
+  {
+   "id": "tip-satelec-ems",
+   "validated": false,
+   "title": "Satelec/DTE ou EMS/Woodpecker ?",
+   "body": "Les pièces à main de détartreur ne sont pas interchangeables entre standards. Identifiez la marque de votre générateur avant de commander, la connectique est différente."
+  },
+  {
+   "id": "tip-led",
+   "validated": false,
+   "title": "LED ou sans LED : à quoi sert l'éclairage ?",
+   "body": "La LED intégrée éclaire directement la zone de travail. Elle nécessite un cordon ou un raccord compatible avec l'éclairage : vérifiez votre équipement."
+  },
+  {
+   "id": "tip-lot-5-50",
+   "validated": false,
+   "title": "Lot de 5 ou lot de 50 ?",
+   "body": "Le lot de 5 convient pour compléter l'équipement d'un fauteuil. Le lot de 50 s'adresse aux cabinets de groupe, centres et structures multi-fauteuils."
+  },
+  {
+   "id": "tip-rotatifs-par-fauteuil",
+   "validated": false,
+   "title": "Combien de rotatifs par fauteuil ?",
+   "body": "Pour enchaîner les patients sans attendre la fin d'un cycle de stérilisation, chaque fauteuil a besoin de plusieurs jeux d'instruments en rotation."
+  },
+  {
+   "id": "tip-notice",
+   "validated": false,
+   "title": "La notice du fabricant, toujours",
+   "body": "Nettoyage, lubrification, stérilisation : la notice de votre instrument fixe la méthode et les produits adaptés. C'est la première référence pour sa durée de vie."
+  },
+  {
+   "id": "tip-lubrification",
+   "validated": false,
+   "title": "Lubrifier avant de stériliser",
+   "body": "Un rotatif mal lubrifié s'use plus vite. Suivez l'ordre indiqué par la notice : nettoyage, lubrification, puis stérilisation."
+  },
+  {
+   "id": "tip-tracabilite",
+   "validated": false,
+   "title": "Organiser la rotation de vos instruments",
+   "body": "Un système simple (gravure, codes couleur, plateaux dédiés) permet de savoir quel instrument est en service, en stérilisation ou disponible."
+  },
+  {
+   "id": "tip-signes-controle",
+   "validated": false,
+   "title": "Bruit, vibrations, chauffe : à surveiller",
+   "body": "Un changement de bruit, des vibrations ou une chauffe inhabituelle doivent conduire à faire contrôler l'instrument avant de continuer à l'utiliser."
+  },
+  {
+   "id": "tip-rangement",
+   "validated": false,
+   "title": "Ranger ses pièces à main après stérilisation",
+   "body": "Conservez les instruments stérilisés dans leurs sachets, au sec et à l'abri de la poussière, jusqu'à leur utilisation."
+  },
+  {
+   "id": "tip-gravure",
+   "validated": false,
+   "title": "Gravure : retrouver ses instruments",
+   "body": "Graver un repère sur vos rotatifs aide à les attribuer à un fauteuil ou à un praticien, et à suivre leur rotation au quotidien."
+  },
+  {
+   "id": "tip-commande-checklist",
+   "validated": false,
+   "title": "Avant de commander : la check-list",
+   "body": "Type d'instrument, rapport de transmission, raccord, LED ou non, quantité : vérifiez ces cinq points pour éviter les erreurs de commande."
+  },
+  {
+   "id": "tip-spray",
+   "validated": false,
+   "title": "Vérifier le spray avant la séance",
+   "body": "Un essai rapide du spray avant chaque patient permet de détecter un orifice obstrué et de s'assurer du refroidissement prévu par le fabricant."
+  },
+  {
+   "id": "tip-fiche-produit",
+   "validated": false,
+   "title": "Lire une fiche produit en 30 secondes",
+   "body": "Repérez le rapport (1:1, 1:5), la vitesse indiquée, le type de raccord, la présence de LED et le nombre de sprays : l'essentiel tient en cinq informations."
+  },
+  {
+   "id": "tip-stock-securite",
+   "validated": false,
+   "title": "Prévoir un stock de sécurité",
+   "body": "Un instrument en réparation ne doit pas bloquer un fauteuil. Garder quelques rotatifs de réserve évite d'annuler des rendez-vous."
+  },
+  {
+   "id": "tip-contre-angle-bleu-usage",
+   "validated": false,
+   "title": "Le contre-angle 1:1, l'outil polyvalent",
+   "body": "À vitesse moteur, le contre-angle à bague bleue accompagne de nombreux actes courants. Vérifiez la compatibilité avec votre moteur avant l'achat."
+  },
+  {
+   "id": "tip-multiplicateur-moteur",
+   "validated": false,
+   "title": "Multiplicateur : pensez au moteur",
+   "body": "Un contre-angle multiplicateur se monte sur un moteur électrique. Sans moteur adapté sur l'unit, c'est la turbine qui s'impose."
+  },
+  {
+   "id": "tip-detartreur-insert",
+   "validated": false,
+   "title": "Pièce à main, générateur, insert : trois éléments",
+   "body": "Le générateur produit l'énergie, la pièce à main la transmet, l'insert travaille. Chacun a sa propre compatibilité : ne les confondez pas à la commande."
+  },
+  {
+   "id": "tip-cordon",
+   "validated": false,
+   "title": "Le cordon fait partie de la compatibilité",
+   "body": "Pour une pièce à main de détartreur ou une turbine LED, le cordon et le raccord doivent correspondre. Vérifiez-les avant de changer d'instrument."
+  },
+  {
+   "id": "tip-multi-fauteuil",
+   "validated": false,
+   "title": "Cabinet multi-fauteuils : standardiser",
+   "body": "Choisir les mêmes raccords et les mêmes références sur tous les postes simplifie la rotation, le stock et les commandes."
+  },
+  {
+   "id": "tip-reception-commande",
+   "validated": false,
+   "title": "À réception : contrôler sa commande",
+   "body": "Vérifiez les références, les quantités et l'état des instruments dès la livraison, puis suivez la notice avant la première utilisation."
+  },
+  {
+   "id": "tip-premiere-utilisation",
+   "validated": false,
+   "title": "Avant la première utilisation",
+   "body": "Un instrument neuf se prépare comme indiqué par le fabricant avant d'être utilisé en bouche : lisez la notice fournie."
+  },
+  {
+   "id": "tip-planifier-renouvellement",
+   "validated": false,
+   "title": "Planifier le renouvellement",
+   "body": "Noter la date de mise en service de chaque rotatif aide à anticiper son remplacement plutôt que de le subir en pleine journée."
+  },
+  {
+   "id": "tip-sachets",
+   "validated": false,
+   "title": "Un instrument, un sachet",
+   "body": "Conditionner chaque pièce à main individuellement facilite la traçabilité et évite les chocs entre instruments."
+  },
+  {
+   "id": "tip-assistante",
+   "validated": false,
+   "title": "L'assistante, maillon clé de la rotation",
+   "body": "Une routine claire au fauteuil et en stérilisation, partagée par toute l'équipe, garantit que les bons instruments sont toujours prêts."
+  },
+  {
+   "id": "tip-blog",
+   "validated": false,
+   "title": "Nos guides sur le blog",
+   "body": "Compatibilités, entretien, organisation : retrouvez nos articles détaillés sur le blog du Comptoir du Rotatif."
+  },
+  {
+   "id": "tip-ergonomie-poids",
+   "validated": false,
+   "title": "Poids et équilibre de la pièce à main",
+   "body": "Une pièce à main bien équilibrée limite la fatigue en fin de journée. Prenez-la en main avant d'équiper tout le cabinet."
+  },
+  {
+   "id": "tip-vitesse-affichee",
+   "validated": false,
+   "title": "Vitesse affichée : une donnée constructeur",
+   "body": "La vitesse indiquée sur une fiche produit est celle annoncée par le fabricant. Elle dépend aussi de l'unit et des réglages du cabinet."
+  },
+  {
+   "id": "tip-triple-spray",
+   "validated": false,
+   "title": "Simple, double ou triple spray ?",
+   "body": "Le nombre de sprays correspond au nombre d'orifices de refroidissement en tête d'instrument. Consultez la fiche produit pour chaque modèle."
+  },
+  {
+   "id": "tip-stockage-avant-usage",
+   "validated": false,
+   "title": "Stocker ses instruments neufs",
+   "body": "Gardez les instruments neufs dans leur emballage d'origine, au sec, jusqu'à leur préparation pour la première utilisation."
+  },
+  {
+   "id": "tip-inventaire",
+   "validated": false,
+   "title": "Un inventaire par trimestre",
+   "body": "Compter régulièrement les rotatifs de chaque poste permet de repérer les pertes et d'anticiper les commandes."
+  },
+  {
+   "id": "tip-commande-groupee",
+   "validated": false,
+   "title": "Commander pour plusieurs praticiens",
+   "body": "En cabinet de groupe, une commande commune sur les mêmes références simplifie le stock et la rotation entre fauteuils."
+  },
+  {
+   "id": "tip-retour-sav",
+   "validated": false,
+   "title": "Un instrument défectueux ?",
+   "body": "Mettez-le de côté, notez le problème constaté et contactez votre fournisseur avec la référence et la date d'achat."
+  },
+  {
+   "id": "tip-coupleur",
+   "validated": false,
+   "title": "Le coupleur, l'intermédiaire indispensable",
+   "body": "Sur un raccord rapide, la turbine se fixe sur un coupleur relié au cordon de l'unit. Coupleur et turbine doivent être compatibles."
+  }
+ ]
+}

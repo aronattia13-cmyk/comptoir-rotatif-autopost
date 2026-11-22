@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SETTINGS = ROOT / "config" / "settings.json"
 SERVICES = ROOT / "data" / "content" / "services.json"
 BLOG_OVERRIDES = ROOT / "data" / "content" / "blog_overrides.json"
+TIPS = ROOT / "data" / "content" / "tips.json"
 
 PRODUCT_LAYOUTS = list(design.PRODUCT_VARIANTS)
 BLOG_LAYOUTS = list(design.BLOG_VARIANTS)
@@ -77,10 +78,20 @@ def model_key(p: Product) -> str:
     return f"{p.category}|{' '.join(words)}"
 
 
+def product_family(p: Product, families: dict) -> str | None:
+    """Rotation family of a product (settings 'product_families': name -> keywords, all required)."""
+    k = model_key(p)
+    for name, words in families.items():
+        if all(w in k for w in words):
+            return name
+    return None
+
+
 class Planner:
     def __init__(self, products: list[Product], articles: list[Article], history: History,
                  settings: dict | None = None, services: dict | None = None,
-                 blog_overrides: dict | None = None, service_photos: list[str] | None = None):
+                 blog_overrides: dict | None = None, service_photos: list[str] | None = None,
+                 tips: list[dict] | None = None):
         self.products = publishable(products)
         self.all_products = products
         self.articles = articles
@@ -90,6 +101,8 @@ class Planner:
         self.overrides = blog_overrides if blog_overrides is not None else load_json(BLOG_OVERRIDES)
         self.cd = self.s["cooldown_days"]
         self.service_photos = service_photos if service_photos is not None else self._find_service_photos()
+        self.tips = load_json(TIPS).get("tips", []) if tips is None else tips
+        self.families = self.s.get("product_families") or {}
 
     # ------------------------------------------------------------------ #
     def _find_service_photos(self) -> list[str]:
@@ -197,19 +210,130 @@ class Planner:
             return sid, svc, msg, photo, source
         return None
 
+
+    # ---------------- rythme 7 j/7 : rotation par familles ---------------- #
+    def _family_days(self, fam: str, today: date) -> list[date]:
+        out = []
+        for e in self.h.entries:
+            if e.family != "product" or e.status in ("missed", "skipped"):
+                continue
+            p = next((x for x in self.all_products if x.handle == e.reference), None)
+            if p and product_family(p, self.families) == fam:
+                out.append(date.fromisoformat(e.date))
+        return out
+
+    def visual_used(self, handle: str, surface: str, layout: str) -> bool:
+        return any(e.family == "product" and e.reference == handle and e.surface == surface
+                   and e.layout == layout and e.status not in ("missed", "skipped") for e in self.h.entries)
+
+    def pick_product_rotation(self, today: date, surface: str):
+        """Famille la moins récente, jamais la même que la veille ou le jour même ;
+        dans la famille, le produit le moins récent (alterne lots 5/50, LED/sans LED) ;
+        jamais deux fois le même produit + lot + support + visuel."""
+        weights = self.s.get("product_variants") or {v: 1 / len(PRODUCT_LAYOUTS) for v in PRODUCT_LAYOUTS}
+        order = sorted(weights, key=lambda v: -weights[v])
+        blocked = set()
+        for fam in self.families:
+            if any(d in (today, today - timedelta(days=1)) for d in self._family_days(fam, today)):
+                blocked.add(fam)
+        fams = sorted([f for f in self.families if f not in blocked],
+                      key=lambda f: (max(self._family_days(f, today), default=date(2000, 1, 1)), list(self.families).index(f)))
+        for fam in fams:
+            cands = []
+            for p in self.products:
+                if product_family(p, self.families) != fam:
+                    continue
+                free = [l for l in order if not self.visual_used(p.handle, surface, l)]
+                if free:
+                    cands.append((self.h.last_date(reference=p.handle) or date(2000, 1, 1), p.handle, p, free[0]))
+            if cands:
+                _, _, p, layout = min(cands, key=lambda c: (c[0], c[1]))
+                return p, layout
+        return None
+
+    def pick_tip(self, today: date):
+        cd = self.cd.get("same_tip", 60)
+        ok = [t for t in self.tips if t.get("validated") and t.get("enabled", True)
+              and self._days(today, subject=t["id"]) >= cd]
+        if not ok:
+            return None
+        return max(ok, key=lambda t: (self._days(today, subject=t["id"]), -self.tips.index(t)))
+
+    def _fill_product(self, item: PlanItem, p: Product, layout: str):
+        item.family = "product"
+        item.subject, item.reference, item.category = model_key(p), p.handle, p.category
+        item.price, item.lot_size, item.title, item.url = str(p.price), p.lot_size, p.display_name, p.url
+        item.photo_url, item.photo_source, item.layout = p.image_url, "product", layout
+
+    def _fill_tip(self, item: PlanItem, t: dict, day: date):
+        item.family = "tip"
+        item.subject, item.reference, item.category = t["id"], "conseils", "tip"
+        item.title, item.body = t["title"], t["body"]
+        item.photo_url, item.photo_source = "", "typographic"
+        item.layout = self._pick_layout(day, SERVICE_LAYOUTS)
+
+    def _fill_service(self, item: PlanItem, day: date) -> bool:
+        r = self.pick_service(day)
+        if not r:
+            return False
+        sid, svc, msg, photo, source = r
+        item.family = "service"
+        item.subject, item.reference, item.category = msg["id"], sid, "service"
+        item.title, item.body = msg["title"], msg["body"]
+        item.photo_url, item.photo_source = photo or "", source
+        item.layout = self._pick_layout(day, SERVICE_LAYOUTS)
+        return True
+
+    def _fill_blog(self, item: PlanItem, day: date) -> bool:
+        a = self.pick_article(day)
+        if not a:
+            return False
+        st = self.article_settings(a)
+        item.family = "blog"
+        item.subject = item.reference = a.url
+        item.title, item.url, item.category = st["short_title"], a.url, "blog"
+        if st["use_article_image"] and a.image_url:
+            item.photo_url, item.photo_source = a.image_url, "article"
+        else:
+            item.photo_url = self.product_photo(day, st["photo_category"]) or ""
+            item.photo_source = "product"
+        item.layout = self._pick_layout(day, BLOG_LAYOUTS)
+        return True
+
+    FALLBACKS = {"product": ["product", "tip", "blog", "service"], "blog": ["blog", "tip", "service"],
+                 "tip": ["tip", "blog", "service"], "service": ["service", "tip", "blog"]}
+
+    def fill_rotation(self, item: PlanItem, day: date):
+        """Remplit un créneau du rythme 7 j/7, avec repli sans répétition ; sinon créneau vide (signalé)."""
+        for fam in self.FALLBACKS.get(item.family, [item.family]):
+            if fam == "product":
+                r = self.pick_product_rotation(day, item.surface)
+                if r:
+                    return self._fill_product(item, *r)
+            elif fam == "tip":
+                t = self.pick_tip(day)
+                if t:
+                    return self._fill_tip(item, t, day)
+            elif fam == "blog" and self._fill_blog(item, day):
+                return
+            elif fam == "service" and self._fill_service(item, day):
+                return
+        item.status, item.reason = "skipped", "aucun contenu inédit et validé disponible (conseils à valider ?)"
+
     # ------------------------------------------------------------------ #
     def plan(self, start: date, days: int, commit_to_history: bool = True) -> list[PlanItem]:
         """Plan [start, start+days). Planned items are written to history
         (status 'planned') so later choices see them — use a History copy
         for simulations."""
         items: list[PlanItem] = []
-        slots = {s["weekday"]: s for s in self.s["weekly_slots"]}
+        slots: dict[int, list[dict]] = {}
+        for sl in self.s["weekly_slots"]:
+            slots.setdefault(sl["weekday"], []).append(sl)
+        rotation = bool(self.families)
         week_cats: dict[int, list[str]] = {}
-        for i in range(days):
-            day = start + timedelta(days=i)
-            s = slots.get(day.weekday())
-            if not s:
-                continue
+        todo = [(start + timedelta(days=i), s) for i in range(days)
+                for s in sorted(slots.get((start + timedelta(days=i)).weekday(), []), key=lambda x: x["time"])]
+        for day, s in todo:
             uid = f"{day.isoformat()}-{s['slot']}"
             if self.h.has(uid):
                 continue                       # already planned / published
@@ -217,7 +341,9 @@ class Planner:
                             family=s["family"], surface=s["surface"], facebook=s.get("facebook", False))
             wk = day.isocalendar()[1]
             cats = week_cats.setdefault(wk, [])
-            if s["family"] == "product":
+            if rotation:
+                self.fill_rotation(item, day)
+            elif s["family"] == "product":
                 p = self.pick_product(day, cats, s["surface"], hard_other_range=False)   # other range preferred
                 if not p:
                     item.status, item.reason = "skipped", "aucun produit non publié récemment"

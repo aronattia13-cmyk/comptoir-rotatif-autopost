@@ -1,10 +1,11 @@
-# Every Sunday: refresh Shopify catalogue + blog, plan the coming week,
+# Every day (rythme 7 j/7): refresh Shopify catalogue + blog, keep the next 8 days planned
+# (already planned slots are never re-planned; a missed day is covered by the next one),
 # render the images, update dashboard + bio page, deploy GitHub Pages.
 # Nothing is published to Meta here.
 name: Planification hebdomadaire
 on:
   schedule:
-    - cron: "17 16 * * 0"        # Sunday ~17:17/18:17 Paris
+    - cron: "17 19 * * *"        # tous les jours ~20:17/21:17 Paris (+ déclenchement externe)
   workflow_dispatch:
 permissions:
   contents: write
@@ -26,7 +27,7 @@ jobs:
           PYTHONPATH: src
           WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }}
           SHOPIFY_STOREFRONT_TOKEN: ${{ secrets.SHOPIFY_STOREFRONT_TOKEN }}
-        run: python -m comptoir.run weekly
+        run: python -m comptoir.run weekly --days 8
       - name: Commit history (also keeps scheduled workflows alive)
         run: |
           git config user.name "comptoir-bot"

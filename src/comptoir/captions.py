@@ -44,6 +44,7 @@ HASHTAGS = {
     "autre": ["#materieldentaire"],
     "blog": ["#organisationcabinet", "#materieldentaire"],
     "service": ["#gravure", "#organisationcabinet"],
+    "tip": ["#conseildentaire", "#organisationcabinet"],
 }
 
 
@@ -99,4 +100,15 @@ def service_caption(msg: dict, platform: str, wa_link: str | None) -> str:
     else:
         lines.append(SERVICE_CTA_IG if wa_link else "Renseignements : lien en bio ou message privé.")
         lines += ["", tags("service")]
+    return "\n".join(lines)
+
+
+def tip_caption(msg: dict, platform: str) -> str:
+    """Conseil / info : titre, texte validé, lien vers la boutique. Aucun slogan."""
+    lines = [msg["title"], "", msg["body"], ""]
+    if platform == "facebook":
+        lines.append(f"Le Comptoir du Rotatif : {STORE_URL}")
+    else:
+        lines.append("Le Comptoir du Rotatif · lien en bio")
+        lines += ["", tags("tip")]
     return "\n".join(lines)

@@ -4,42 +4,114 @@
   "weekly_slots": [
     {
       "weekday": 0,
-      "slot": "mon-product",
+      "slot": "mon-story",
+      "family": "tip",
+      "surface": "story",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 0,
+      "slot": "mon-post",
       "family": "product",
       "surface": "post",
-      "time": "12:30",
+      "time": "16:30",
       "facebook": true
     },
     {
       "weekday": 1,
-      "slot": "tue-service-story",
-      "family": "service",
+      "slot": "tue-story",
+      "family": "product",
       "surface": "story",
-      "time": "18:30",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 1,
+      "slot": "tue-post",
+      "family": "tip",
+      "surface": "post",
+      "time": "16:30",
       "facebook": true
     },
     {
       "weekday": 2,
-      "slot": "wed-blog",
+      "slot": "wed-story",
+      "family": "tip",
+      "surface": "story",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 2,
+      "slot": "wed-post",
       "family": "blog",
       "surface": "post",
-      "time": "12:30",
+      "time": "16:30",
       "facebook": true
     },
     {
       "weekday": 3,
-      "slot": "thu-product-story",
+      "slot": "thu-story",
+      "family": "service",
+      "surface": "story",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 3,
+      "slot": "thu-post",
+      "family": "product",
+      "surface": "post",
+      "time": "16:30",
+      "facebook": true
+    },
+    {
+      "weekday": 4,
+      "slot": "fri-story",
       "family": "product",
       "surface": "story",
-      "time": "18:30",
+      "time": "09:30",
       "facebook": false
     },
     {
       "weekday": 4,
-      "slot": "fri-product-range",
+      "slot": "fri-post",
+      "family": "tip",
+      "surface": "post",
+      "time": "16:30",
+      "facebook": true
+    },
+    {
+      "weekday": 5,
+      "slot": "sat-story",
+      "family": "tip",
+      "surface": "story",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 5,
+      "slot": "sat-post",
       "family": "product",
       "surface": "post",
-      "time": "12:30",
+      "time": "16:30",
+      "facebook": true
+    },
+    {
+      "weekday": 6,
+      "slot": "sun-story",
+      "family": "tip",
+      "surface": "story",
+      "time": "09:30",
+      "facebook": false
+    },
+    {
+      "weekday": 6,
+      "slot": "sun-post",
+      "family": "tip",
+      "surface": "post",
+      "time": "16:30",
       "facebook": true
     }
   ],
@@ -48,7 +120,8 @@
     "same_model": 21,
     "same_article": 90,
     "same_service_message": 28,
-    "same_service_photo": 21
+    "same_service_photo": 21,
+    "same_tip": 28
   },
   "avoid_last_layouts": 2,
   "post_format": "portrait",
@@ -66,5 +139,27 @@
     "max_publish_retries": 2,
     "max_delay_minutes": 90,
     "_max_delay_doc": "A slot more than 90 min late is never published (no catch-up of past slots); it is marked 'missed'."
-  }
+  },
+  "product_families": {
+    "turbine": [
+      "turbine"
+    ],
+    "satelec": [
+      "detartreur",
+      "satelec"
+    ],
+    "ems": [
+      "detartreur",
+      "ems"
+    ],
+    "contre-angle-bleu": [
+      "contre-angle",
+      "bleue"
+    ],
+    "contre-angle-rouge": [
+      "contre-angle",
+      "rouge"
+    ]
+  },
+  "_rythme": "7 j/7 : story Instagram 09:30, post Instagram + Facebook 16:30 (Europe/Paris). ~5 publicités produits/semaine (lun, mar, jeu, ven, sam). Jamais la même famille deux jours de suite ; jamais deux fois le même produit+lot+support+visuel."
 }

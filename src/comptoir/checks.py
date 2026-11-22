@@ -12,7 +12,7 @@ def check_item(item: PlanItem, catalog: list[Product], verify_urls: bool = True)
     errors: list[str] = []
     if item.status != "planned":
         return [f"statut {item.status}"]
-    if not item.photo_url and item.family != "service":
+    if not item.photo_url and item.family not in ("service", "tip"):
         errors.append("aucune photo réelle disponible")
     if item.family == "product":
         p = next((x for x in catalog if x.handle == item.reference), None)
@@ -30,6 +30,9 @@ def check_item(item: PlanItem, catalog: list[Product], verify_urls: bool = True)
                 errors.append(f"le visuel affiche un ancien prix ({shown} au lieu de {item.price}) : visuel à régénérer")
         if verify_urls and item.url and not check_url(item.url):
             errors.append(f"fiche produit injoignable: {item.url}")
+    elif item.family == "tip":
+        if not item.title or not item.body:
+            errors.append("conseil sans titre ou sans texte")
     elif item.family == "blog":
         if not item.url:
             errors.append("article sans URL")
