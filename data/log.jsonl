@@ -29,3 +29,9 @@
 {"ts": "2026-11-19T18:59:42+01:00", "event": "publié", "uid": "2026-11-19-thu-product-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4034007381608716694"}}
 {"ts": "2026-11-20T17:55:02+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-20T17:55:02+01:00", "event": "créneau non rattrapé", "uid": "2026-11-20-fri-product-range", "retard_min": 325}
+{"ts": "2026-11-22T18:03:48+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-22T18:03:49+01:00", "event": "planifié", "uid": "2026-11-23-mon-product", "family": "product", "title": "Turbines raccord rapide KaVo – LED triple spray", "reason": ""}
+{"ts": "2026-11-22T18:03:49+01:00", "event": "planifié", "uid": "2026-11-24-tue-service-story", "family": "service", "title": "Un instrument, un collaborateur", "reason": ""}
+{"ts": "2026-11-22T18:03:50+01:00", "event": "planifié", "uid": "2026-11-25-wed-blog", "family": "blog", "title": "Organisation rationnelle face aux contraintes réglementaires", "reason": ""}
+{"ts": "2026-11-22T18:03:50+01:00", "event": "planifié", "uid": "2026-11-26-thu-product-story", "family": "product", "title": "Raccord rapide type Multiflex KaVo", "reason": ""}
+{"ts": "2026-11-22T18:03:52+01:00", "event": "planifié", "uid": "2026-11-27-fri-product-range", "family": "product", "title": "Contre-angles 1:5 (bague rouge) LED spray", "reason": ""}
