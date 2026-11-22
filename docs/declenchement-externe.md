@@ -43,6 +43,13 @@ uniquement chez le déclencheur (cron-job.org ou secret Cloudflare), révocable 
    - Notifications : activer l'e-mail en cas d'échec (réponse attendue : `204`).
 3. Le jeton reste dans cron-job.org : il n'est jamais écrit dans le dépôt ni transmis à Claude.
 
+## Test du jeton sans aucune publication
+Avant la fusion, tester le raccordement avec `meta-check.yml` (« Meta - diagnostic (aucune publication) »),
+corps `{"ref":"main"}` : réponse attendue `204`, puis une exécution apparaît dans l'onglet Actions.
+`controle.yml` n'existe qu'après la fusion (avant : réponse 404, normal).
+Tant que la branche n'est pas fusionnée, les appels à `due.yml` ne déclenchent que l'ancien calendrier
+(créneaux 12:30 / 18:30 du lundi au vendredi) : rien n'est dû à 09:31, 09:50, 16:31 ni 16:50.
+
 ## Alternatives équivalentes
 - Cloudflare Workers « Cron Triggers » (offre gratuite) : même appel HTTP, plus technique.
 - Google Apps Script (déclencheur horaire, gratuit) : même appel HTTP depuis un compte Google.
