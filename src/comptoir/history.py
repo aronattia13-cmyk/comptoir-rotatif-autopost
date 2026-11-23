@@ -35,12 +35,13 @@ class Entry:
 
 
 class History:
-    def __init__(self, entries: list[Entry] | None = None, path: Path = HISTORY_FILE):
+    def __init__(self, entries: list[Entry] | None = None, path: Path | None = None):
         self.entries = entries or []
-        self.path = path
+        self.path = path or HISTORY_FILE          # résolu à l'appel (isolation des tests)
 
     @classmethod
-    def load(cls, path: Path = HISTORY_FILE) -> "History":
+    def load(cls, path: Path | None = None) -> "History":
+        path = path or HISTORY_FILE
         if not path.exists():
             return cls([], path)
         raw = json.loads(path.read_text() or "[]")

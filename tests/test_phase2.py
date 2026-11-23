@@ -11,6 +11,8 @@ from comptoir.history import Entry, History
 
 FIX = Path(__file__).parent / "fixtures"
 START = date(2026, 11, 16)  # a Monday
+# Ces tests couvrent l'ancien calendrier 5 jours (toujours utilisable) ; le rythme 7 j/7 est testé dans test_rythme_7j.py.
+LEGACY = json.loads((FIX / "settings_5j.json").read_text())
 
 
 @pytest.fixture(scope="module")
@@ -29,6 +31,7 @@ def articles():
 
 
 def plan(products, articles, history=None, weeks=4, **kw):
+    kw.setdefault("settings", LEGACY)
     return planner.simulate(products, articles, history or History([]), START, weeks, **kw)
 
 
@@ -139,12 +142,12 @@ def test_rare_variants_never_back_to_back(products, articles):
 
 def test_history_prevents_repeat(products, articles):
     h = History([])
-    first = planner.Planner(products, articles, h).plan(START, 7)
+    first = planner.Planner(products, articles, h, settings=LEGACY).plan(START, 7)
     mon = first[0]
     assert h.has(mon.uid)
-    again = planner.Planner(products, articles, h).plan(START, 7)
+    again = planner.Planner(products, articles, h, settings=LEGACY).plan(START, 7)
     assert again == []                                   # nothing re-planned
-    later = planner.Planner(products, articles, h).plan(START + timedelta(days=7), 7)
+    later = planner.Planner(products, articles, h, settings=LEGACY).plan(START + timedelta(days=7), 7)
     assert mon.reference not in [i.reference for i in later]
 
 
@@ -248,7 +251,7 @@ def test_variant_mix_70_20_10(products, articles):
     import collections
     from comptoir.planner import Planner
     h = History([])
-    pl = Planner(products, articles, h)
+    pl = Planner(products, articles, h, settings=LEGACY)
     picks = []
     for k in range(60):
         v = pl._pick_weighted(START + timedelta(days=k), pl.s["product_variants"])

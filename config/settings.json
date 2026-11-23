@@ -4,51 +4,125 @@
   "weekly_slots": [
     {
       "weekday": 0,
-      "slot": "mon-product",
-      "family": "product",
+      "slot": "mon-post",
+      "family": "auto",
       "surface": "post",
-      "time": "12:30",
+      "time": "09:30",
+      "facebook": true
+    },
+    {
+      "weekday": 0,
+      "slot": "mon-story",
+      "family": "auto",
+      "surface": "story",
+      "time": "16:30",
+      "facebook": false
+    },
+    {
+      "weekday": 1,
+      "slot": "tue-post",
+      "family": "auto",
+      "surface": "post",
+      "time": "09:30",
       "facebook": true
     },
     {
       "weekday": 1,
-      "slot": "tue-service-story",
-      "family": "service",
+      "slot": "tue-story",
+      "family": "auto",
       "surface": "story",
-      "time": "18:30",
+      "time": "16:30",
+      "facebook": false
+    },
+    {
+      "weekday": 2,
+      "slot": "wed-post",
+      "family": "auto",
+      "surface": "post",
+      "time": "09:30",
       "facebook": true
     },
     {
       "weekday": 2,
-      "slot": "wed-blog",
-      "family": "blog",
+      "slot": "wed-story",
+      "family": "auto",
+      "surface": "story",
+      "time": "16:30",
+      "facebook": false
+    },
+    {
+      "weekday": 3,
+      "slot": "thu-post",
+      "family": "auto",
       "surface": "post",
-      "time": "12:30",
+      "time": "09:30",
       "facebook": true
     },
     {
       "weekday": 3,
-      "slot": "thu-product-story",
-      "family": "product",
+      "slot": "thu-story",
+      "family": "auto",
       "surface": "story",
-      "time": "18:30",
+      "time": "16:30",
       "facebook": false
     },
     {
       "weekday": 4,
-      "slot": "fri-product-range",
-      "family": "product",
+      "slot": "fri-post",
+      "family": "auto",
       "surface": "post",
-      "time": "12:30",
+      "time": "09:30",
       "facebook": true
+    },
+    {
+      "weekday": 4,
+      "slot": "fri-story",
+      "family": "auto",
+      "surface": "story",
+      "time": "16:30",
+      "facebook": false
+    },
+    {
+      "weekday": 5,
+      "slot": "sat-post",
+      "family": "auto",
+      "surface": "post",
+      "time": "09:30",
+      "facebook": true
+    },
+    {
+      "weekday": 5,
+      "slot": "sat-story",
+      "family": "auto",
+      "surface": "story",
+      "time": "16:30",
+      "facebook": false
+    },
+    {
+      "weekday": 6,
+      "slot": "sun-post",
+      "family": "auto",
+      "surface": "post",
+      "time": "09:30",
+      "facebook": true
+    },
+    {
+      "weekday": 6,
+      "slot": "sun-story",
+      "family": "auto",
+      "surface": "story",
+      "time": "16:30",
+      "facebook": false
     }
   ],
   "cooldown_days": {
     "same_product": 42,
     "same_model": 21,
-    "same_article": 90,
+    "same_article": 30,
     "same_service_message": 28,
-    "same_service_photo": 21
+    "same_service_photo": 21,
+    "same_tip": 28,
+    "same_visual": 38
   },
   "avoid_last_layouts": 2,
   "post_format": "portrait",
@@ -66,5 +140,38 @@
     "max_publish_retries": 2,
     "max_delay_minutes": 90,
     "_max_delay_doc": "A slot more than 90 min late is never published (no catch-up of past slots); it is marked 'missed'."
-  }
+  },
+  "product_families": {
+    "turbine": [
+      "turbine"
+    ],
+    "satelec": [
+      "detartreur",
+      "satelec"
+    ],
+    "ems": [
+      "detartreur",
+      "ems"
+    ],
+    "contre-angle-bleu": [
+      "contre-angle",
+      "bleue"
+    ],
+    "contre-angle-rouge": [
+      "contre-angle",
+      "rouge"
+    ]
+  },
+  "_rythme": "7 j/7 (Europe/Paris, été/hiver) : 09:30 post Instagram + Facebook ; 16:30 Story Instagram. Répartition cible sur l'ensemble des contenus : 65 % produits, 15 % organisation/équipement (conseils), 10 % articles du blog, 10 % gravure. Jamais la même famille de produits deux jours de suite ; même produit+lot+support+visuel au plus tôt après cooldown_days.same_visual jours.",
+  "content_mix": {
+    "product": 0.65,
+    "tip": 0.15,
+    "blog": 0.1,
+    "service": 0.1
+  },
+  "content_mix_window": 28,
+  "slot_overrides": {
+    "2026-11-24-tue-story": "product"
+  },
+  "_slot_overrides_doc": "Créneau précis -> type imposé (ex. publicité produit à la place d'un conseil retiré). Les règles de rotation, prix Shopify et anti-doublon s'appliquent."
 }

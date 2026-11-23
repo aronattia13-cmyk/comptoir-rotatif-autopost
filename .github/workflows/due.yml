@@ -1,4 +1,4 @@
-# Publications that are due, every 30 minutes on weekdays.
+# Publications that are due, every 30 minutes, 7 days a week (+ external trigger, see docs/declenchement-externe.md).
 #
 # 1. refresh : compare live Shopify prices with every future product visual;
 #              regenerate visual + captions when a price / lot / name changed.
@@ -13,7 +13,7 @@
 name: Publications du jour
 on:
   schedule:
-    - cron: "7,37 8-19 * * 1-5"     # UTC; covers 12:30 and 18:30 Europe/Paris, winter and summer
+    - cron: "7,37 6-17 * * *"       # UTC, 7 j/7 ; couvre 09:30 et 16:30 Europe/Paris, hiver et été (+ déclenchement externe, voir docs/declenchement-externe.md)
   workflow_dispatch:
 concurrency: { group: comptoir-state, cancel-in-progress: false }
 jobs:
@@ -64,6 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - uses: actions/checkout@v5
         with: { ref: main }
@@ -79,6 +80,22 @@ jobs:
           META_APP_ID: ${{ vars.META_APP_ID }}
           PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
         run: python -m comptoir.run due --mode auto
+      - name: Contrôle par canal (Story IG, Post IG, Post FB)
+        id: check
+        if: always()
+        env:
+          PYTHONPATH: src
+          META_SYSTEM_USER_TOKEN: ${{ secrets.META_SYSTEM_USER_TOKEN }}
+          META_APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          META_APP_ID: ${{ vars.META_APP_ID }}
+        run: python -m comptoir.run check
+      - name: Alerte (issue GitHub + e-mail)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/alerte.sh
       - if: always()
         run: |
           git config user.name "comptoir-bot"

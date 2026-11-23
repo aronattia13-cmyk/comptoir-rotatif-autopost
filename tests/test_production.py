@@ -27,7 +27,8 @@ def articles():
 
 
 def test_blog_slot_replaced_by_other_range_product_when_articles_exhausted(products, articles):
-    items = planner.simulate(products, articles, History([]), START, 4)
+    items = planner.simulate(products, articles, History([]), START, 4,
+                             settings=json.loads((Path(__file__).parent / 'fixtures' / 'settings_5j.json').read_text()))
     wed = [i for i in items if i.slot == "wed-blog"]
     assert sum(i.family == "blog" and i.status == "planned" for i in wed) == 2   # 2 enabled real articles
     repl = [i for i in wed if i.family == "product"]

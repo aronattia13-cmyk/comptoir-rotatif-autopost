@@ -19,9 +19,7 @@ def test_dst_paris_times():
     assert summer.scheduled_at().utcoffset() == timedelta(hours=2)
     assert winter.scheduled_at().astimezone(ZoneInfo("UTC")).hour == 11
     assert summer.scheduled_at().astimezone(ZoneInfo("UTC")).hour == 10
-    # due.yml cron "7,37 8-19 * * 1-5" (UTC) covers 12:30 and 18:30 Paris in both seasons
-    for h in (10, 11, 16, 17):
-        assert 8 <= h <= 19
+    # Couverture réelle de due.yml (7 j/7, été/hiver) : voir tests/test_rythme_7j.py
 
 
 def _setup(tmp_path, monkeypatch, scheduled: datetime, activated: datetime | None):

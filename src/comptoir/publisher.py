@@ -81,6 +81,19 @@ def _find_recent(posts: list[dict], caption: str, field: str, since: datetime) -
     return None
 
 
+def _already_on_meta(client, caption: str, platform: str, hours: int = 36) -> dict | None:
+    """Garde anti-doublon AVANT envoi (posts seulement) : si une publication à la légende identique
+    existe déjà chez Meta (ex. deux exécutions rapprochées, historique non enregistré), on ne republie pas."""
+    if not caption:
+        return None
+    try:
+        posts = client.ig_recent_media(25) if platform == "instagram" else client.fb_recent_posts(25)
+    except Exception:                       # lecture impossible : comportement inchangé (envoi normal)
+        return None
+    field = "caption" if platform == "instagram" else "message"
+    return _find_recent(posts or [], caption, field, datetime.now(timezone.utc) - timedelta(hours=hours))
+
+
 def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
                  poll: int = 5, timeout: int = 180, get=None) -> dict:
     """Publish one queue item. `done` = platforms already recorded in history
@@ -96,48 +109,71 @@ def publish_item(item: dict, client: MetaClient, base_url: str, done: dict,
                             expected_sha256=payload.get("image_sha256"))
         caption = "" if story else payload.get("caption_instagram", "")
         started = datetime.now(timezone.utc) - timedelta(minutes=2)
-        cid = client.ig_create_container(url, caption, story=story)
-        client.ig_wait_container(cid, poll=poll, timeout=timeout)
-        try:
-            mid = client.ig_publish(cid)
-        except AmbiguousPublish as exc:
-            found = None if story else _find_recent(client.ig_recent_media(), caption, "caption", started)
-            if not found:
-                results["instagram"] = {"status": "uncertain", "container": cid, "error": str(exc)}
+        dup = None if story else _already_on_meta(client, caption, "instagram")
+        if dup:
+            results["instagram"] = {"status": "published", "id": dup["id"], "permalink": dup.get("permalink", ""),
+                                    "note": "déjà présent chez Meta : non republié"}
+        else:
+            results.update(_ig_send(client, url, caption, story, started, poll, timeout))
+            if results["instagram"]["status"] == "uncertain":
                 return results
-            mid = found["id"]
-        results["instagram"] = {"status": "published", "id": mid, "container": cid,
-                                "permalink": client.ig_permalink(mid)}
 
     # -- Facebook ---------------------------------------------------------
     if item.get("facebook") and "facebook" not in done:
         img = payload.get("facebook_image") or payload["image"]
         if story and not payload.get("facebook_image"):
             return results                          # no vertical story on the Page feed
-        url = public_url(base_url, img)
-        sha = payload.get("facebook_image_sha256") if payload.get("facebook_image") else payload.get("image_sha256")
         caption = payload.get("caption_facebook", "")
-        started = datetime.now(timezone.utc) - timedelta(minutes=2)
-        try:
-            verify_public_image(url, SIZES["portrait"], get=get, expected_sha256=sha)
-            body = client.fb_photo(url, caption, published=True)
-            pid = body.get("post_id") or body.get("id")
-        except AmbiguousPublish as exc:
-            found = _find_recent(client.fb_recent_posts(), caption, "message", started)
-            if not found:
-                results["facebook"] = {"status": "uncertain", "error": str(exc)}
-                return results
-            pid = found["id"]
-        except StaleMedia as exc:
-            # Keep what Instagram already did; Facebook is retried after redeploy.
-            results["facebook"] = {"status": "retry", "error": str(exc)}
+        dup = _already_on_meta(client, caption, "facebook")
+        if dup:
+            results["facebook"] = {"status": "published", "id": dup["id"], "permalink": dup.get("permalink_url", ""),
+                                   "note": "déjà présent chez Meta : non republié"}
             return results
-        except (MetaError, MediaNotPublic) as exc:
-            if not results:
-                raise
-            results["facebook"] = {"status": "failed", "error": str(exc)}
+        return _fb_send(client, base_url, payload, img, caption, results, get)
+    return results
+
+
+def _ig_send(client, url, caption, story, started, poll, timeout) -> dict:
+    results: dict = {}
+    cid = client.ig_create_container(url, caption, story=story)
+    client.ig_wait_container(cid, poll=poll, timeout=timeout)
+    try:
+        mid = client.ig_publish(cid)
+    except AmbiguousPublish as exc:
+        found = None if story else _find_recent(client.ig_recent_media(), caption, "caption", started)
+        if not found:
+            results["instagram"] = {"status": "uncertain", "container": cid, "error": str(exc)}
             return results
-        results["facebook"] = {"status": "published", "id": pid, "permalink": client.fb_permalink(pid)}
+        mid = found["id"]
+    results["instagram"] = {"status": "published", "id": mid, "container": cid,
+                            "permalink": client.ig_permalink(mid)}
+    return results
+
+
+def _fb_send(client, base_url, payload, img, caption, results, get) -> dict:
+    url = public_url(base_url, img)
+    sha = payload.get("facebook_image_sha256") if payload.get("facebook_image") else payload.get("image_sha256")
+    started = datetime.now(timezone.utc) - timedelta(minutes=2)
+    try:
+        verify_public_image(url, SIZES["portrait"], get=get, expected_sha256=sha)
+        body = client.fb_photo(url, caption, published=True)
+        pid = body.get("post_id") or body.get("id")
+    except AmbiguousPublish as exc:
+        found = _find_recent(client.fb_recent_posts(), caption, "message", started)
+        if not found:
+            results["facebook"] = {"status": "uncertain", "error": str(exc)}
+            return results
+        pid = found["id"]
+    except StaleMedia as exc:
+        # Keep what Instagram already did; Facebook is retried after redeploy.
+        results["facebook"] = {"status": "retry", "error": str(exc)}
+        return results
+    except (MetaError, MediaNotPublic) as exc:
+        if not results:
+            raise
+        results["facebook"] = {"status": "failed", "error": str(exc)}
+        return results
+    results["facebook"] = {"status": "published", "id": pid, "permalink": client.fb_permalink(pid)}
     return results
 
 
