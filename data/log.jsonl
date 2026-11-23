@@ -37,3 +37,21 @@
 {"ts": "2026-11-22T18:03:52+01:00", "event": "planifié", "uid": "2026-11-27-fri-product-range", "family": "product", "title": "Contre-angles 1:5 (bague rouge) LED spray", "reason": ""}
 {"ts": "2026-11-23T21:05:44+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-23T21:05:44+01:00", "event": "créneau non rattrapé", "uid": "2026-11-23-mon-product", "retard_min": 515}
+{"ts": "2026-11-23T22:52:45+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-23T22:52:45+01:00", "event": "créneaux de l'ancien calendrier retirés (jamais publiés)", "uids": ["2026-11-24-tue-service-story", "2026-11-25-wed-blog", "2026-11-26-thu-product-story", "2026-11-27-fri-product-range"]}
+{"ts": "2026-11-23T22:52:48+01:00", "event": "planifié", "uid": "2026-11-24-tue-post", "family": "product", "title": "Turbines raccord rapide KaVo – LED triple spray", "reason": ""}
+{"ts": "2026-11-23T22:52:49+01:00", "event": "planifié", "uid": "2026-11-24-tue-story", "family": "product", "title": "Détartreur compatible Satelec DTE sans LED", "reason": ""}
+{"ts": "2026-11-23T22:52:51+01:00", "event": "planifié", "uid": "2026-11-25-wed-post", "family": "product", "title": "Contre-angles 1:5 (bague rouge) LED spray", "reason": ""}
+{"ts": "2026-11-23T22:52:54+01:00", "event": "planifié", "uid": "2026-11-25-wed-story", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
+{"ts": "2026-11-23T22:52:54+01:00", "event": "planifié", "uid": "2026-11-26-thu-post", "family": "blog", "title": "Organisation rationnelle face aux contraintes réglementaires", "reason": ""}
+{"ts": "2026-11-23T22:52:56+01:00", "event": "planifié", "uid": "2026-11-26-thu-story", "family": "product", "title": "Détartreur compatible EMS Woodpecker sans LED", "reason": ""}
+{"ts": "2026-11-23T22:52:56+01:00", "event": "planifié", "uid": "2026-11-27-fri-post", "family": "product", "title": "Détartreur compatible Satelec DTE avec LED", "reason": ""}
+{"ts": "2026-11-23T22:52:56+01:00", "event": "planifié", "uid": "2026-11-27-fri-story", "family": "service", "title": "Un instrument, un collaborateur", "reason": ""}
+{"ts": "2026-11-23T22:53:02+01:00", "event": "planifié", "uid": "2026-11-28-sat-post", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
+{"ts": "2026-11-23T22:53:02+01:00", "event": "planifié", "uid": "2026-11-28-sat-story", "family": "product", "title": "Turbine raccord rapide KaVo – LED triple spray", "reason": ""}
+{"ts": "2026-11-23T22:53:03+01:00", "event": "planifié", "uid": "2026-11-29-sun-post", "family": "product", "title": "Détartreurs compatibles EMS Woodpecker avec LED", "reason": ""}
+{"ts": "2026-11-23T22:53:03+01:00", "event": "planifié", "uid": "2026-11-29-sun-story", "family": "service", "title": "Vos instruments, identifiés", "reason": ""}
+{"ts": "2026-11-23T22:53:04+01:00", "event": "planifié", "uid": "2026-11-30-mon-post", "family": "product", "title": "Turbines raccord rapide KaVo – LED triple spray", "reason": ""}
+{"ts": "2026-11-23T22:53:04+01:00", "event": "planifié", "uid": "2026-11-30-mon-story", "family": "product", "title": "Contre-angle 1:5 (bague rouge) LED spray", "reason": ""}
+{"ts": "2026-11-23T22:53:05+01:00", "event": "planifié", "uid": "2026-12-01-tue-post", "family": "product", "title": "Détartreurs compatibles Satelec DTE avec LED", "reason": ""}
+{"ts": "2026-11-23T22:53:10+01:00", "event": "planifié", "uid": "2026-12-01-tue-story", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
