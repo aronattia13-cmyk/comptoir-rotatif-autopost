@@ -176,8 +176,15 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/detartreur_3_2.png?v=1750327468",
   "category": "detartreur",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18134565691821623",
+    "container": "17917444878550679",
+    "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4037556840099285723"
+   }
+  },
   "price": "349.99",
   "error": ""
  },
