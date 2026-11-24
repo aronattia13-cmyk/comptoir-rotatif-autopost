@@ -411,5 +411,37 @@
   "platforms": {},
   "price": "529.99",
   "error": ""
+ },
+ {
+  "uid": "2026-12-02-wed-post",
+  "date": "2026-12-02",
+  "slot": "wed-post",
+  "family": "service",
+  "surface": "post",
+  "subject": "gravure-cabinet",
+  "reference": "gravure",
+  "layout": "a-gravure-brume",
+  "photo": "",
+  "category": "service",
+  "status": "planned",
+  "platforms": {},
+  "price": "",
+  "error": ""
+ },
+ {
+  "uid": "2026-12-02-wed-story",
+  "date": "2026-12-02",
+  "slot": "wed-story",
+  "family": "product",
+  "surface": "story",
+  "subject": "detartreur|détartreur compatible ems woodpecker avec led",
+  "reference": "ems-woodpecker",
+  "layout": "a-blanc",
+  "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/detartreur_4.png?v=1750327149",
+  "category": "detartreur",
+  "status": "planned",
+  "platforms": {},
+  "price": "349.99",
+  "error": ""
  }
 ]

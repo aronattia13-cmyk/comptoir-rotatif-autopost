@@ -59,3 +59,6 @@
 {"ts": "2026-11-24T09:32:09+01:00", "event": "publié", "uid": "2026-11-24-tue-post", "links": {"instagram": "https://www.instagram.com/p/DgHiFANDgWf/", "facebook": "https://www.facebook.com/122121827061321317/posts/122122471395321317"}}
 {"ts": "2026-11-24T16:31:40+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-24T16:31:51+01:00", "event": "publié", "uid": "2026-11-24-tue-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4037556840099285723"}}
+{"ts": "2026-11-24T20:21:42+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-24T20:21:42+01:00", "event": "planifié", "uid": "2026-12-02-wed-post", "family": "service", "title": "Gravure personnalisée pour votre cabinet", "reason": ""}
+{"ts": "2026-11-24T20:21:43+01:00", "event": "planifié", "uid": "2026-12-02-wed-story", "family": "product", "title": "Détartreur compatible EMS Woodpecker avec LED", "reason": ""}
