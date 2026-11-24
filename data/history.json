@@ -148,8 +148,20 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_22.png?v=1750332884",
   "category": "turbine",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18503211709099602",
+    "container": "17917404879550679",
+    "permalink": "https://www.instagram.com/p/DgHiFANDgWf/"
+   },
+   "facebook": {
+    "status": "published",
+    "id": "1150324318158203_122122471395321317",
+    "permalink": "https://www.facebook.com/122121827061321317/posts/122122471395321317"
+   }
+  },
   "price": "4709.99",
   "error": ""
  },
