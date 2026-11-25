@@ -62,3 +62,6 @@
 {"ts": "2026-11-24T20:21:42+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
 {"ts": "2026-11-24T20:21:42+01:00", "event": "planifié", "uid": "2026-12-02-wed-post", "family": "service", "title": "Gravure personnalisée pour votre cabinet", "reason": ""}
 {"ts": "2026-11-24T20:21:43+01:00", "event": "planifié", "uid": "2026-12-02-wed-story", "family": "product", "title": "Détartreur compatible EMS Woodpecker avec LED", "reason": ""}
+{"ts": "2026-11-25T04:03:14+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-25T04:03:17+01:00", "event": "planifié", "uid": "2026-12-03-thu-post", "family": "product", "title": "Contre-angles 1:5 (bague rouge) LED spray", "reason": ""}
+{"ts": "2026-11-25T04:03:19+01:00", "event": "planifié", "uid": "2026-12-03-thu-story", "family": "product", "title": "Turbine raccord rapide KaVo – LED triple spray", "reason": ""}
