@@ -227,8 +227,15 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_9_4cbebde1-c6cd-4995-ba61-d93b5931132b.png?v=1749133629",
   "category": "contre-angle",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18128131909906471",
+    "container": "17917564317550679",
+    "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4038281581747996088"
+   }
+  },
   "price": "529.99",
   "error": ""
  },
