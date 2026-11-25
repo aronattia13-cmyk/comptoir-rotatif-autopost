@@ -69,3 +69,4 @@
 {"ts": "2026-11-25T09:32:03+01:00", "event": "publié", "uid": "2026-11-25-wed-post", "links": {"instagram": "https://www.instagram.com/p/DgKG3oJmjo_/", "facebook": "https://www.facebook.com/122121827061321317/posts/122122549137321317"}}
 {"ts": "2026-11-25T16:31:37+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-25T16:31:51+01:00", "event": "publié", "uid": "2026-11-25-wed-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4038281581747996088"}}
+{"ts": "2026-11-25T20:21:28+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
