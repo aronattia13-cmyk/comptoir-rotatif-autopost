@@ -70,3 +70,6 @@
 {"ts": "2026-11-25T16:31:37+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-25T16:31:51+01:00", "event": "publié", "uid": "2026-11-25-wed-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4038281581747996088"}}
 {"ts": "2026-11-25T20:21:28+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-26T03:13:18+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-26T03:13:20+01:00", "event": "planifié", "uid": "2026-12-04-fri-post", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
+{"ts": "2026-11-26T03:13:22+01:00", "event": "planifié", "uid": "2026-12-04-fri-story", "family": "product", "title": "Détartreur compatible Satelec DTE sans LED", "reason": ""}
