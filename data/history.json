@@ -250,8 +250,20 @@
   "layout": "a-blog",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_10_bb3052b3-4600-48ed-aa48-863e699b0629.png?v=1750350666",
   "category": "blog",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "17872373094663137",
+    "container": "17917651758550679",
+    "permalink": "https://www.instagram.com/p/DgMrqxYoDjH/"
+   },
+   "facebook": {
+    "status": "published",
+    "id": "1150324318158203_122122623381321317",
+    "permalink": "https://www.facebook.com/122121827061321317/posts/122122623381321317"
+   }
+  },
   "price": "",
   "error": ""
  },

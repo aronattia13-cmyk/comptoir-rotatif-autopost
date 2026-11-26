@@ -73,3 +73,5 @@
 {"ts": "2026-11-26T03:13:18+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
 {"ts": "2026-11-26T03:13:20+01:00", "event": "planifié", "uid": "2026-12-04-fri-post", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
 {"ts": "2026-11-26T03:13:22+01:00", "event": "planifié", "uid": "2026-12-04-fri-story", "family": "product", "title": "Détartreur compatible Satelec DTE sans LED", "reason": ""}
+{"ts": "2026-11-26T09:31:40+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-26T09:32:04+01:00", "event": "publié", "uid": "2026-11-26-thu-post", "links": {"instagram": "https://www.instagram.com/p/DgMrqxYoDjH/", "facebook": "https://www.facebook.com/122121827061321317/posts/122122623381321317"}}
