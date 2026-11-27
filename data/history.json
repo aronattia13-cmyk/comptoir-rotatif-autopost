@@ -329,8 +329,15 @@
   "layout": "a-gravure-brume",
   "photo": "",
   "category": "service",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18122871409972339",
+    "container": "17917830435550679",
+    "permalink": "https://www.instagram.com/stories/lecomptoirdurotatif/4039731252546123758"
+   }
+  },
   "price": "",
   "error": ""
  },
