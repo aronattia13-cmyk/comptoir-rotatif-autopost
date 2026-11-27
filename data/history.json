@@ -301,8 +301,20 @@
   "layout": "a-blanc",
   "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_28.png?v=1750326142",
   "category": "detartreur",
-  "status": "planned",
-  "platforms": {},
+  "status": "published",
+  "platforms": {
+   "instagram": {
+    "status": "published",
+    "id": "18100078811449088",
+    "container": "17917788636550679",
+    "permalink": "https://www.instagram.com/p/DgPQdawow6w/"
+   },
+   "facebook": {
+    "status": "published",
+    "id": "1150324318158203_122122699659321317",
+    "permalink": "https://www.facebook.com/122121827061321317/posts/122122699659321317"
+   }
+  },
   "price": "349.99",
   "error": ""
  },

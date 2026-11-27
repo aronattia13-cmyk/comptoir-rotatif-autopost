@@ -81,3 +81,5 @@
 {"ts": "2026-11-27T03:11:14+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
 {"ts": "2026-11-27T03:11:16+01:00", "event": "planifié", "uid": "2026-12-05-sat-post", "family": "product", "title": "Détartreurs compatibles EMS Woodpecker sans LED", "reason": ""}
 {"ts": "2026-11-27T03:11:18+01:00", "event": "planifié", "uid": "2026-12-05-sat-story", "family": "product", "title": "Contre-angle 1:5 (bague rouge) LED spray", "reason": ""}
+{"ts": "2026-11-27T09:31:37+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-27T09:32:08+01:00", "event": "publié", "uid": "2026-11-27-fri-post", "links": {"instagram": "https://www.instagram.com/p/DgPQdawow6w/", "facebook": "https://www.facebook.com/122121827061321317/posts/122122699659321317"}}
