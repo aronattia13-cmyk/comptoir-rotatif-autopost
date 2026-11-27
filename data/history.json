@@ -545,5 +545,37 @@
   "platforms": {},
   "price": "349.99",
   "error": ""
+ },
+ {
+  "uid": "2026-12-05-sat-post",
+  "date": "2026-12-05",
+  "slot": "sat-post",
+  "family": "product",
+  "surface": "post",
+  "subject": "detartreur|détartreur compatible ems woodpecker san led",
+  "reference": "10-detartreurs-compatibles-ems-woodpecker-sans-led",
+  "layout": "a-blanc",
+  "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/detartreur3_2.png?v=1750332586",
+  "category": "detartreur",
+  "status": "planned",
+  "platforms": {},
+  "price": "3029.99",
+  "error": ""
+ },
+ {
+  "uid": "2026-12-05-sat-story",
+  "date": "2026-12-05",
+  "slot": "sat-story",
+  "family": "product",
+  "surface": "story",
+  "subject": "contre-angle|contre angle 1:5 bague rouge led spray",
+  "reference": "nsk-style-dentaire-1-5-augmentation-piece-a-main-contre-angle-fiber-lumiere-led-tete-standard-ajustement-ti-max-x95l-cartouche-rotor",
+  "layout": "a-brume",
+  "photo": "https://cdn.shopify.com/s/files/1/0931/4163/1299/files/Blue_Modern_Dental_Clinic_Logo_1563_x_203_px_700_x_700_px_1400_x_203_px_1400_x_203_px_500_x_300_px_700_x_500_px_700_x_400_px_700_x_350_px_700_x_300_px_700_x_200_px_700_x_200_p_10_bb3052b3-4600-48ed-aa48-863e699b0629.png?v=1750350666",
+  "category": "contre-angle",
+  "status": "planned",
+  "platforms": {},
+  "price": "779.99",
+  "error": ""
  }
 ]

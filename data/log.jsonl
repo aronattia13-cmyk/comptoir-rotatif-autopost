@@ -78,3 +78,6 @@
 {"ts": "2026-11-26T16:31:41+01:00", "event": "mode", "mode": "live"}
 {"ts": "2026-11-26T16:31:56+01:00", "event": "publié", "uid": "2026-11-26-thu-story", "links": {"instagram": "https://www.instagram.com/stories/lecomptoirdurotatif/4039006391041334976"}}
 {"ts": "2026-11-26T20:21:08+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-27T03:11:14+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
+{"ts": "2026-11-27T03:11:16+01:00", "event": "planifié", "uid": "2026-12-05-sat-post", "family": "product", "title": "Détartreurs compatibles EMS Woodpecker sans LED", "reason": ""}
+{"ts": "2026-11-27T03:11:18+01:00", "event": "planifié", "uid": "2026-12-05-sat-story", "family": "product", "title": "Contre-angle 1:5 (bague rouge) LED spray", "reason": ""}
