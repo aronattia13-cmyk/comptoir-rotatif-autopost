@@ -89,3 +89,5 @@
 {"ts": "2026-11-28T02:58:59+01:00", "event": "catalogue", "products": 15, "publishable": 14, "articles": 3}
 {"ts": "2026-11-28T02:59:01+01:00", "event": "planifié", "uid": "2026-12-06-sun-post", "family": "product", "title": "Turbines raccord rapide KaVo – LED triple spray", "reason": ""}
 {"ts": "2026-11-28T02:59:04+01:00", "event": "planifié", "uid": "2026-12-06-sun-story", "family": "product", "title": "Contre-angle bague bleue 1:1 40 000 tr/min LED simple spray", "reason": ""}
+{"ts": "2026-11-28T09:31:33+01:00", "event": "mode", "mode": "live"}
+{"ts": "2026-11-28T09:31:51+01:00", "event": "publié", "uid": "2026-11-28-sat-post", "links": {"instagram": "https://www.instagram.com/p/DgR1PQMD237/", "facebook": "https://www.facebook.com/122121827061321317/posts/122122775727321317"}}
